@@ -1,0 +1,6 @@
+<resources>
+
+    <style name="Theme.Chatandroid.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.Chatandroid.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+</resources>

@@ -1,0 +1,28 @@
+<resources>
+    <!--    <string name="agora_app_id">d2d1af30f5fb483bbef2c9f7ace22f4a</string>-->
+    <string name="agora_app_id">15cb0d28b87b425ea613fc46f7c9f974</string>
+    <string name="agora_app_cert">83296b9cabbc442b97a1895871595cc5</string>
+
+    <string name="switch_camera">切换摄像头</string>
+    <string name="answer">接听</string>
+    <string name="change_voice">转音频</string>
+    <string name="hang_up">挂断</string>
+    <string name="Hands_free">免提</string>
+    <string name="password">密码</string>
+    <string name="mute">静音</string>
+    <string name="recording_video">录制视频</string>
+    <string name="The_other_is_recived">已在其他设备接听</string>
+    <string name="The_other_is_refused">已在其他设备挂断</string>
+    <string name="The_other_is_busy">对方正在忙碌中</string>
+    <string name="title_activity_ease_multiple_video">EaseMultipleVideoActivity</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+    <string name="wait_calling">等待接听</string>
+    <string name="wait_recive">等待接听</string>
+
+    <string name="hello_first_fragment">Hello first fragment</string>
+    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+</resources>
