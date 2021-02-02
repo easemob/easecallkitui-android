@@ -18,16 +18,15 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            android.libraryVariants.all { variant ->
-                variant.outputs.all {
-                    outputFileName = "ease${defaultConfig.versionName}.aar"
-                }
-            }
         }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lintOptions {
+        abortOnError false
     }
 }
 
@@ -52,3 +51,7 @@ dependencies {
     //声网SDK
     implementation 'io.agora.rtc:full-sdk:3.2.1'
 }
+
+
+apply from: "../upload_aar.gradle"
+//apply from: 'https://raw.githubusercontent.com/blundell/release-android-library/master/android-release-aar.gradle'

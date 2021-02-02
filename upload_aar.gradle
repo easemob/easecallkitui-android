@@ -4,7 +4,7 @@ apply plugin: 'com.jfrog.bintray'
 def siteUrl = 'https://github.com/easemob/easecallkitui-android' //项目在github主页地址
 def gitUrl = 'https://github.com/easemob/easecallkitui-android.git'   //Git仓库的地址
 def ndkBuildPrefix = "."
-def projectName = 'ease-im-kit'
+def projectName = 'ease-call-kit'
 project.archivesBaseName=projectName
 group = "com.hyphenate"//groupId
 version = project.sdkVersion//发布aar的库版本

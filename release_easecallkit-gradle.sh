@@ -19,7 +19,6 @@ function log_print() {
 
 function get_sdk_version() {
   cd ..
-  cd ..
 	cd emclient-android;
 	# 从EMClient.java中获取版本号
 	TEMPFILE=`find . -name EMClient.java`
@@ -55,7 +54,7 @@ function prepare() {
 function add_tag() {
 	TAG=$1
         echo "add tag $TAG"
-        (echo "ease-call-kit"; cd calluikit; git tag $TAG; git push origin $TAG;)
+        (echo "ease-call-kit"; cd easecallkitui; git tag $TAG; git push origin $TAG;)
 }
 
 function bintray_upload() {
