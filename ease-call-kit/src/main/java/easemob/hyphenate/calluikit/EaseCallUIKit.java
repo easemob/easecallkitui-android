@@ -2,12 +2,16 @@ package easemob.hyphenate.calluikit;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.util.Log;
 
 import com.hyphenate.EMCallBack;
@@ -16,7 +20,11 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMCmdMessageBody;
 import com.hyphenate.chat.EMConversation;
 import com.hyphenate.chat.EMMessage;
+import com.hyphenate.exceptions.HyphenateException;
 import com.hyphenate.util.EMLog;
+import com.hyphenate.util.EasyUtils;
+
+import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -26,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import androidx.core.app.NotificationCompat;
 import easemob.hyphenate.calluikit.base.EaseCallKitConfig;
 import easemob.hyphenate.calluikit.event.AlertEvent;
 import easemob.hyphenate.calluikit.event.AnswerEvent;
@@ -40,11 +49,16 @@ import easemob.hyphenate.calluikit.ui.EaseVideoCallActivity;
 import easemob.hyphenate.calluikit.utils.EaseCallAction;
 import easemob.hyphenate.calluikit.base.EaseCallKitListener;
 import easemob.hyphenate.calluikit.base.EaseCallType;
+import easemob.hyphenate.calluikit.utils.EaseCallKitNotifier;
 import easemob.hyphenate.calluikit.utils.EaseCallState;
+import easemob.hyphenate.calluikit.utils.EaseFileUtils;
 import easemob.hyphenate.calluikit.utils.EaseMsgUtils;
 import easemob.hyphenate.calluikit.utils.EaseCallKitUtils;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
+import static easemob.hyphenate.calluikit.utils.EaseCallKitUtils.isAppRunningForeground;
+import static easemob.hyphenate.calluikit.utils.EaseMsgUtils.CALL_GROUP_ID;
+import static easemob.hyphenate.calluikit.utils.EaseMsgUtils.CALL_INVITE_EXT;
 
 
 /**
@@ -55,7 +69,7 @@ import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 public class EaseCallUIKit {
     private static final String TAG = EaseCallUIKit.class.getSimpleName();
     private static EaseCallUIKit instance = null;
-    private boolean callkitInited = false;
+    private boolean callKitInit = false;
     private Context appContext = null;
     private EMMessageListener messageListener = null;
     private EaseCallType callType = EaseCallType.SIGNAL_VIDEO_CALL;
@@ -65,6 +79,7 @@ public class EaseCallUIKit {
     public static String deviceId = "android_";
     public  String clallee_devId;
     private String callID = null;
+    private JSONObject inviteExt = null;
     private EaseCallInfo callInfo = new EaseCallInfo();
     private TimeHandler timeHandler;
     private Map<String,EaseCallInfo> callInfoMap = new HashMap<>();
@@ -73,6 +88,7 @@ public class EaseCallUIKit {
     private ArrayList<String> inviteeUsers = new ArrayList<>();
     private EaseCallKitConfig  callKitConfig;
     private EaseMultipleVideoActivity multipleVideoActivity;
+    private EaseCallKitNotifier notifier;
 
     private EaseCallUIKit() {}
 
@@ -93,7 +109,7 @@ public class EaseCallUIKit {
      * @return
      */
     public synchronized boolean init(Context context, EaseCallKitConfig config) {
-        if(callkitInited) {
+        if(callKitInit) {
             return true;
         }
         removeMessageListener();
@@ -114,9 +130,12 @@ public class EaseCallUIKit {
         callKitConfig.setCallTimeOut(config.getCallTimeOut());
         callKitConfig.setRingFile(config.getRingFile());
 
+        //init notifier
+        initNotifier();
+
         //增加接收消息回调
         addMessageListener();
-        callkitInited = true;
+        callKitInit = true;
         return true;
     }
 
@@ -130,14 +149,19 @@ public class EaseCallUIKit {
      }
 
 
+    private void initNotifier(){
+        notifier = new EaseCallKitNotifier(appContext);
+    }
+
+
     /**
      * 通话错误类型
      *
     */
     public enum EaseCallError{
-         PROCESS_ERROR,
-         RTC_ERROR,
-         IM_ERROR
+         PROCESS_ERROR, //业务逻辑异常
+         RTC_ERROR, //音视频异常
+         IM_ERROR  //IM异常
     }
 
 
@@ -157,9 +181,10 @@ public class EaseCallUIKit {
     /**
      * 加入1v1通话
      * @param type 通话类型(只能为SIGNAL_VOICE_CALL或SIGNAL_VIDEO_CALL类型）
-     * @param user 用户ID(也就是环信ID)
+     * @param user 被叫用户ID(也就是环信ID)
+     * @param ext  扩展字段(用户扩展字段)
      */
-    public void startSingleCall(final EaseCallType type, final String user){
+    public void startSingleCall(final EaseCallType type, final String user,final  Map<String, Object> ext){
         if(callState != EaseCallState.CALL_IDEL){
             if(callListener != null){
                 callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy");
@@ -182,6 +207,9 @@ public class EaseCallUIKit {
         //改为主动呼叫状态
         callState = EaseCallState.CALL_OUTGOING;
         fromUserId = user;
+        if(ext != null){
+            inviteExt = EaseCallKitUtils.convertMapToJSONObject(ext);
+        }
 
         //开始1V1通话
         EaseVideoCallActivity callActivity = new EaseVideoCallActivity();
@@ -199,9 +227,10 @@ public class EaseCallUIKit {
 
     /**
      * 邀请加入多人通话
-     * @param users 用户ID列表
+     * @param users 用户ID列表(环信ID列表)
+     * @param ext  扩展字段(用户扩展字段)
      */
-    public void startInviteMultipleCall(final String[] users){
+    public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext){
         if(users == null || users.length  == 0) {
             if(!isDestroy(multipleVideoActivity)){
                 inviteeUsers.clear();
@@ -223,6 +252,9 @@ public class EaseCallUIKit {
             if(isDestroy(multipleVideoActivity)){
                 if(users != null && users.length > 0){
                     //改为主动呼叫状态
+                    if(ext != null){
+                        inviteExt = EaseCallKitUtils.convertMapToJSONObject(ext);
+                    }
                     callState = EaseCallState.CALL_OUTGOING;
                     multipleVideoActivity = new EaseMultipleVideoActivity();
                     Intent intent = new Intent(appContext, multipleVideoActivity.getClass()).addFlags(FLAG_ACTIVITY_NEW_TASK);
@@ -253,6 +285,7 @@ public class EaseCallUIKit {
             public void onMessageReceived(List<EMMessage> messages) {
                 for(EMMessage message: messages){
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
+                    EMLog.d(TAG,"Receive msg:" + message.getMsgId() + " from:" + message.getFrom()+ "  messageType:"+ messageType);
                     //有关通话控制信令
                     if(messageType.equals(EaseMsgUtils.CALL_MSG_INFO) && !(message.getFrom().equals(EMClient.getInstance().getCurrentUser()))){
                         String action = message.getStringAttribute(EaseMsgUtils.CALL_ACTION, "");
@@ -260,6 +293,13 @@ public class EaseCallUIKit {
                         String fromCallId = message.getStringAttribute(EaseMsgUtils.CLL_ID, "");
                         String fromUser = message.getFrom();
                         String channel = message.getStringAttribute(EaseMsgUtils.CALL_CHANNELNAME, "");
+                        JSONObject ext = null;
+                        try {
+                            ext = message.getJSONObjectAttribute(CALL_INVITE_EXT);
+                        } catch (HyphenateException exception) {
+                            exception.printStackTrace();
+                        }
+
                         if(action == null || callerDevId == null || fromCallId == null || fromUser ==null || channel == null){
                             if(callListener != null){
                                 callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_RECEIVE_ERROR.code,"receive message error");
@@ -298,6 +338,7 @@ public class EaseCallUIKit {
                                     callInfo.setChannelName(channel);
                                     callInfo.setComming(true);
                                     callInfo.setFromUser(fromUser);
+                                    callInfo.setExt(ext);
 
                                     //邀请信息放入列表中
                                     callInfoMap.put(fromCallId, callInfo);
@@ -324,6 +365,7 @@ public class EaseCallUIKit {
             public void onCmdMessageReceived(List<EMMessage> messages) {
                 for(EMMessage message: messages){
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
+                    EMLog.d(TAG,"Receive cmdmsg:" + message.getMsgId() + " from:" + message.getFrom()  + "  messageType:"+ messageType);
                     //有关通话控制信令
                     if(messageType.equals(EaseMsgUtils.CALL_MSG_INFO) && !(message.getFrom().equals(EMClient.getInstance().getCurrentUser()))){
                         String action = message.getStringAttribute(EaseMsgUtils.CALL_ACTION, "");
@@ -343,6 +385,10 @@ public class EaseCallUIKit {
                                     event.callerDevId = callerDevId;
                                     event.callId = fromCallId;
                                     event.userId = fromUser;
+                                    if(callID.equals(fromCallId)){
+                                        callState = EaseCallState.CALL_IDEL;
+                                    }
+                                    notifier.reset();
                                     //发布消息
                                     EaseLiveDataBus.get().with(EaseCallType.SIGNAL_VIDEO_CALL.toString()).postValue(event);
                                 }
@@ -377,6 +423,7 @@ public class EaseCallUIKit {
                                                 channelName = info.getChannelName();
                                                 callType = info.getCallKitType();
                                                 fromUserId = info.getFromUser();
+                                                inviteExt =info.getExt();
                                             }
                                             //收到有效的呼叫map邀请信息
                                             callInfoMap.clear();
@@ -534,10 +581,6 @@ public class EaseCallUIKit {
         return clallee_devId;
     }
 
-    public void setClallee_devId(String clallee_devId) {
-        clallee_devId = clallee_devId;
-    }
-
     public EaseCallKitListener getCallListener() {
         return callListener;
     }
@@ -645,6 +688,8 @@ public class EaseCallUIKit {
                 sendEmptyMessageDelayed(MSG_TIMER, 1000);
             }else if(msg.what == MSG_START_ACTIVITY){
                 timeHandler.stopTime();
+                String info = "";
+                String userName = EaseCallKitUtils.getUserNickName(fromUserId);
                 if(callType != EaseCallType.CONFERENCE_CALL){
                     //启动activity
                     EaseVideoCallActivity callActivity = new EaseVideoCallActivity();
@@ -656,7 +701,17 @@ public class EaseCallUIKit {
                     bundle.putString("username", fromUserId);
                     intent.putExtras(bundle);
                     appContext.startActivity(intent);
-                }else{
+                    if(Build.VERSION.SDK_INT >= 29 && !EasyUtils.isAppRunningForeground(appContext)) {
+                        EMLog.e(TAG,"notifier.notify:" + info);
+                        if(callType == EaseCallType.SIGNAL_VIDEO_CALL){
+                            info = appContext.getString(R.string.alert_request_video, userName);
+                        }else{
+                            info = appContext.getString(R.string.alert_request_voice, userName);
+                        }
+                        notifier.notify(intent, "环信 ", info);
+                    }
+                }else {
+                    //启动多人通话界面
                     multipleVideoActivity =
                             new EaseMultipleVideoActivity();
                     Intent intent = new Intent(appContext, multipleVideoActivity.getClass()).addFlags(FLAG_ACTIVITY_NEW_TASK);
@@ -667,11 +722,15 @@ public class EaseCallUIKit {
                     bundle.putString("username", fromUserId);
                     intent.putExtras(bundle);
                     appContext.startActivity(intent);
+                    if (Build.VERSION.SDK_INT >= 29 && isAppRunningForeground(appContext)) {
+                        info = appContext.getString(R.string.alert_request_multiple_video, userName);
+                        notifier.notify(intent, "Hyphenate", info);
+                    }
                 }
 
                 //通话邀请回调
                 if(callListener != null){
-                    callListener.onRevivedCall(callType,fromUserId);
+                    callListener.onRevivedCall(callType,fromUserId,inviteExt);
                 }
             }
             super.handleMessage(msg);
@@ -703,6 +762,10 @@ public class EaseCallUIKit {
 
     public void setMultipleVideoActivity(EaseMultipleVideoActivity activity) {
         this.multipleVideoActivity = null;
+    }
+
+    public JSONObject getInviteExt() {
+        return inviteExt;
     }
 
     public Context getAppContext() {

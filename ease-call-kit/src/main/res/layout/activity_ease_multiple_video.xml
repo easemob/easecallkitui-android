@@ -15,7 +15,6 @@
             android:layout_width="26dp"
             android:layout_centerVertical="true"
             android:background="@drawable/call_mini"
-            android:visibility="gone"
             android:layout_marginLeft="23dp" />
         <TextView
             android:id="@+id/tv_call_time"

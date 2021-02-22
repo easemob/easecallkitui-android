@@ -9,14 +9,14 @@ package easemob.hyphenate.calluikit.base;
  */
 
 public enum EaseCallEndReason {
-    EaseCallEndReasonHangup(0),
-    EaseCallEndReasonCancel(1),
-    EaseCallEndReasonRemoteCancel(2),
-    EaseCallEndReasonRefuse(3),
-    EaseCallEndReasonBusy(4),
-    EaseCallEndReasonNoResponse(5),
-    EaseCallEndReasonRemoteNoResponse(6),
-    EaseCallEndReasonHandleOnOtherDevice(7);
+    EaseCallEndReasonHangup(0), //正常挂断
+    EaseCallEndReasonCancel(1), //自己取消通话
+    EaseCallEndReasonRemoteCancel(2), //对方取消通话
+    EaseCallEndReasonRefuse(3),//拒绝接听
+    EaseCallEndReasonBusy(4), //忙线中
+    EaseCallEndReasonNoResponse(5), //自己无响应
+    EaseCallEndReasonRemoteNoResponse(6), //对端无响应
+    EaseCallEndReasonHandleOnOtherDevice(7); //在其他设备处理
 
 
     public int code;

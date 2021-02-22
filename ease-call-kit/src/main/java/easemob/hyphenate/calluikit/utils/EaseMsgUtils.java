@@ -28,6 +28,7 @@ public class EaseMsgUtils {
     public static String CALLED_DEVICE_ID = "calleeDevId";
     public static String CALLED_TRANSE_VOICE = "videoToVoice";
 
+
     public static String CLL_ID = "callId";
     public static String CLL_TIMESTRAMEP = "ts";
     public static String CALL_MSG_TYPE = "msgType";
@@ -44,6 +45,9 @@ public class EaseMsgUtils {
     public static String CHANNEL = "channel";
     public static String USERID = "userId";
     public static String ADDAMARK = "+";
+
+    public static String CALL_INVITE_EXT = "ext";
+    public static String CALL_GROUP_ID = "groupId";
 
     final public static int CALL_TIMER_TIMEOUT = 0;
     final public static int CALL_TIMER_CALL_TIME = 1;

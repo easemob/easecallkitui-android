@@ -65,8 +65,6 @@ public class EaseCommingCallView extends FrameLayout {
         mBtnPickup = findViewById(R.id.btn_pickup);
         mInviterName = findViewById(R.id.tv_nick);
         avatar_view = findViewById(R.id.iv_avatar);
-
-
         mBtnReject.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -148,21 +146,6 @@ public class EaseCommingCallView extends FrameLayout {
     @Override
     protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
         super.onVisibilityChanged(changedView, visibility);
-        if(visibility == View.VISIBLE) {
- //           mIvCallAnim.setBackgroundResource(R.drawable.call_ring_anim);
-//            mDrawableAnim = mIvCallAnim.getBackground();
-//            if(mDrawableAnim instanceof AnimationDrawable) {
-//                ((AnimationDrawable) mDrawableAnim).setOneShot(false);
-//                ((AnimationDrawable) mDrawableAnim).start();
-//            }
-        }else {
-//            if(mDrawableAnim instanceof AnimationDrawable) {
-//                if(((AnimationDrawable) mDrawableAnim).isRunning()) {
-//                    ((AnimationDrawable) mDrawableAnim).stop();
-//                }
-//                mDrawableAnim = null;
-//            }
-        }
     }
 
 

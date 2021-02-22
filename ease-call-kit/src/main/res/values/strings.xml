@@ -14,6 +14,8 @@
     <string name="The_other_is_recived">已在其他设备接听</string>
     <string name="The_other_is_refused">已在其他设备挂断</string>
     <string name="The_other_is_busy">对方正在忙碌中</string>
+    <string name="The_coming_call">收到来电</string>
+    <string name="alert_window_permission_denied">当前App未被授予悬浮窗权限 :(</string>
     <string name="title_activity_ease_multiple_video">EaseMultipleVideoActivity</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
@@ -22,6 +24,10 @@
     <string name="previous">Previous</string>
     <string name="wait_calling">等待接听</string>
     <string name="wait_recive">等待接听</string>
+
+    <string name="alert_request_video">%1$s发来视频请求</string>
+    <string name="alert_request_voice">%1$s发来语音请求</string>
+    <string name="alert_request_multiple_video">%1$s发来多人视频请求</string>
 
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>

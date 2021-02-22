@@ -21,6 +21,7 @@ public class EaseCallKitConfig {
     private String defaultHeadImage;
     private Map<String,EaseCallUserInfo> userInfoMap = new HashMap<>();
     private String RingFile;
+    private String agoraAppId = "15cb0d28b87b425ea613fc46f7c9f974";
     private long callTimeOut = 30 * 1000;
 
     public EaseCallKitConfig(){
@@ -70,4 +71,8 @@ public class EaseCallKitConfig {
     public void setCallTimeOut(long callTimeOut) {
         this.callTimeOut = callTimeOut;
     }
+
+    public String getAgoraAppId() { return agoraAppId; }
+
+    public void setAgoraAppId(String agoraAppId) { this.agoraAppId = agoraAppId; }
 }

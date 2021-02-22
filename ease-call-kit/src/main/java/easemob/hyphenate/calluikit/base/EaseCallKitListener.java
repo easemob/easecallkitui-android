@@ -2,6 +2,8 @@ package easemob.hyphenate.calluikit.base;
 
 import android.content.Context;
 
+import org.json.JSONObject;
+
 import easemob.hyphenate.calluikit.EaseCallUIKit;
 
 /**
@@ -13,9 +15,10 @@ public interface EaseCallKitListener{
     /**
      * 邀请好友进行多人通话
      * @param context
-     * @param users    当前通话中已经存在的成员
+     * @param users   当前通话中已经存在的成员
+     * @param ext     自定义扩展字段
      */
-    void onInviteUsers(Context context,String []users);
+    void onInviteUsers(Context context,String []users,JSONObject ext);
 
 
     /**
@@ -31,8 +34,19 @@ public interface EaseCallKitListener{
      * 收到通话邀请回调
      * @param callType  通话类型
      * @param userId  邀请方userId
+     * @param ext     自定义扩展字段
      */
-    void onRevivedCall(EaseCallType callType, String userId);
+    void onRevivedCall(EaseCallType callType, String userId, JSONObject ext);
+
+
+    /**
+     * 用户生成Token回调
+     * @param userId       用户自己Id(环信Id)
+     * @param channelName  频道名称
+     * @param agoraAppId   声网appId
+     * @param callback     生成的Token回调(成功为Token，失败为 errorCode和errorMsg)
+     */
+    default void onGenerateToken(String userId,String channelName,String agoraAppId,EaseCallKitTokenCallback callback){};
 
 
     /**

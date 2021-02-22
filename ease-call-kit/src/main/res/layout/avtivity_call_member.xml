@@ -37,8 +37,8 @@
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
             android:padding="2dp"
-            android:src="@drawable/em_call_mute"
-            android:visibility="gone" />
+            android:visibility="gone"
+            android:background="@null"/>
         <ImageView
             android:id="@+id/icon_talking"
             android:layout_width="@dimen/adaptive_40dp"
@@ -46,7 +46,21 @@
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
             android:padding="2dp"
-            android:src="@drawable/em_call_sound_on"
+            android:src="@drawable/ease_mic_level_on"
             android:visibility="gone" />
     </RelativeLayout>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/ic_loading_bg"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:id="@+id/member_loading"
+        android:visibility="gone"
+        android:padding="16.0dip" >
+        <ProgressBar
+            android:layout_width="30.0dip"
+            android:layout_height="30.0dip"
+            android:indeterminateDrawable="@drawable/call_load_progress" />
+    </LinearLayout>
 </RelativeLayout>

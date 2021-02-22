@@ -1,5 +1,6 @@
 package easemob.hyphenate.calluikit.base;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,7 +14,10 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,6 +52,8 @@ public class EaseCallMemberView extends RelativeLayout {
     private ImageView talkingView;
     private TextView nameView;
     private SurfaceView surfaceView;
+    private ValueAnimator animator;
+
     private UserInfo userInfo;
 
     private boolean isVideoOff = true;
@@ -57,6 +63,10 @@ public class EaseCallMemberView extends RelativeLayout {
     private String streamId;
     private Bitmap headBitMap;
     private String headUrl;
+    private EaseCallMemberView memberView;
+    private LinearLayout loading_dialog;
+
+
 
     public EaseCallMemberView(Context context) {
         this(context, null);
@@ -79,6 +89,16 @@ public class EaseCallMemberView extends RelativeLayout {
         audioOffView = (ImageView) findViewById(R.id.icon_mute);
         talkingView = (ImageView) findViewById(R.id.icon_talking);
         nameView = (TextView) findViewById(R.id.text_name);
+       // animator = new ValueAnimator();
+        loading_dialog = findViewById(R.id.member_loading);
+    }
+
+    public void setLoading(Boolean loading){
+        if(loading){
+            loading_dialog.setVisibility(VISIBLE);
+        }else {
+            loading_dialog.setVisibility(GONE);
+        }
     }
 
     public void addSurfaceView(SurfaceView surfaceView) {
@@ -93,7 +113,6 @@ public class EaseCallMemberView extends RelativeLayout {
             headUrl = EaseCallKitUtils.getUserHeadImage(info.userAccount);
             if(headUrl != null){
                 loadHeadImage();
-//                avatarView.setBackgroundResource(R.drawable.call_memberview_background);
             }else{
                 avatarView.setBackgroundResource(R.drawable.call_memberview_background);
             }
@@ -106,6 +125,14 @@ public class EaseCallMemberView extends RelativeLayout {
         }
         return null;
     }
+
+    public int getUserId(){
+        if(userInfo != null){
+            return userInfo.uid;
+        }
+        return 0;
+    }
+
 
     public SurfaceView getSurfaceView() {
         return this.surfaceView;
@@ -120,15 +147,81 @@ public class EaseCallMemberView extends RelativeLayout {
             return;
         }
         if (isAudioOff) {
-            audioOffView.setVisibility(View.VISIBLE);
+            audioOffView.setVisibility(VISIBLE);
+            audioOffView.setImageResource(R.drawable.ease_mic_level_off);
         } else {
-            audioOffView.setVisibility(View.GONE);
+            audioOffView.setVisibility(GONE);
+            audioOffView.setImageResource(R.drawable.ease_mic_level_on);
+        }
+    }
+
+    public boolean getAudioOff(){
+        return  isAudioOff;
+    }
+
+    /**
+     * 更新正在说话
+     */
+    public void setSpeak(boolean speak,int volume) {
+        if(speak){
+              int value = 1;
+              value = volume/15  ;
+              if(value > 14){
+                  value =14;
+              }
+              audioOffView.setVisibility(VISIBLE);
+              if(value == 1){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_01);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_01));
+              }else if(value == 2){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_02);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_02));
+              }else if(value == 3){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_03);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_03));
+              }else if(value ==4){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_04);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_04));
+              }else if(value ==5){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_05);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_05));
+              }else if(value ==6){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_06);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_06));
+              }else if(value ==7){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_07);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_07));
+              }else if(value ==8){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_08);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_08));
+              }else if(value ==9){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_09);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_09));
+              }else if(value ==10){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_10);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_10));
+              }else if(value ==11){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_11);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_11));
+              }else if(value ==12){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_12);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_12));
+              }else if(value ==13){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_13);
+                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_13));
+              }else if(value == 14){
+                  audioOffView.setImageResource(R.drawable.ease_mic_level_14);
+//                  audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_14));
+              }
+        }else{
+            audioOffView.setVisibility(GONE);
         }
     }
 
     public boolean isAudioOff() {
         return isAudioOff;
     }
+
 
     /**
      * 更新视频显示状态
@@ -155,24 +248,6 @@ public class EaseCallMemberView extends RelativeLayout {
         }
     }
 
-    /**
-     * 更新说话状态
-     */
-    public void setTalking(boolean talking) {
-        if (isDesktop) {
-            return;
-        }
-
-        if (isFullScreenMode) {
-            return;
-        }
-
-        if (talking) {
-            talkingView.setVisibility(VISIBLE);
-        } else {
-            talkingView.setVisibility(GONE);
-        }
-    }
 
     /**
      * 设置当前 view 对应的 stream 的用户，主要用来语音通话时显示对方头像

@@ -1,5 +1,7 @@
 package easemob.hyphenate.calluikit.base;
 
+import org.json.JSONObject;
+
 /**
  * author lijian
  * email: Allenlee@easemob.com
@@ -12,6 +14,7 @@ public class EaseCallInfo {
     private String callerDevId;
     private String callId;
     private EaseCallType callKitType;
+    private JSONObject ext;
 
     public EaseCallInfo(){
 
@@ -64,4 +67,8 @@ public class EaseCallInfo {
     public void setCallKitType(EaseCallType callKitType) {
         this.callKitType = callKitType;
     }
+
+    public JSONObject getExt() { return ext; }
+
+    public void setExt(JSONObject ext) { this.ext = ext; }
 }
