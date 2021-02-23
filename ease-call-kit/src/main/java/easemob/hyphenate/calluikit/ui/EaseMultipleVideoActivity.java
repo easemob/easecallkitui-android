@@ -36,6 +36,7 @@ import com.hyphenate.chat.EMConversation;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.util.EMLog;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -1038,20 +1039,6 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                     handler.removeMessages(102);
                     callHandlerThread.quit();
                     break;
-                case 400: //请求token
-                    tokenUrl = EaseMsgUtils.TOKEN_SERVER;
-                    tokenUrl += EaseMsgUtils.APPCERT;
-                    tokenUrl += EaseMsgUtils.ADDAMARK;
-                    tokenUrl += getString(R.string.agora_app_cert);
-                    tokenUrl += EaseMsgUtils.APPKEY;
-                    tokenUrl += EaseMsgUtils.ADDAMARK;
-                    tokenUrl += getString(R.string.agora_app_id);
-                    tokenUrl += EaseMsgUtils.CHANNEL;
-                    tokenUrl += EaseMsgUtils.ADDAMARK;
-                    tokenUrl += channelName;
-                    tokenUrl += EaseMsgUtils.USERID;
-                    tokenUrl += EaseMsgUtils.ADDAMARK;
-                    tokenUrl += EMClient.getInstance().getCurrentUser();
                 default:
                     break;
             }
@@ -1118,6 +1105,19 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
 
             message.setAttribute(EaseMsgUtils.CLL_TIMESTRAMEP, System.currentTimeMillis());
             message.setAttribute(EaseMsgUtils.CALL_MSG_TYPE, EaseMsgUtils.CALL_MSG_INFO);
+
+            //增加推送字段
+            JSONObject extObject = new JSONObject();
+            try {
+                String info = getApplication().getString(R.string.alert_request_multiple_video, EMClient.getInstance().getCurrentUser());
+                extObject.putOpt("em_push_title",info);
+                extObject.putOpt("em_push_content",info);
+                extObject.putOpt("isRtcCall",true);
+                extObject.putOpt("callType",EaseCallType.CONFERENCE_CALL.code);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            message.setAttribute("em_apns_ext", extObject);
 
             final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
             message.setMessageStatusCallback(new EMCallBack() {

@@ -61,6 +61,7 @@ import com.hyphenate.cloud.HttpClientManager;
 import com.hyphenate.exceptions.HyphenateException;
 import com.hyphenate.util.EMLog;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -1100,45 +1101,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                     handler.removeMessages(102);
                     callHandlerThread.quit();
                     break;
-                case 400: //请求token
-                    tokenUrl = EaseMsgUtils.TOKEN_SERVER;
-                    tokenUrl += EaseMsgUtils.APPCERT;
-                    tokenUrl += EaseMsgUtils.ADDAMARK;
-                    tokenUrl += getString(R.string.agora_app_cert);
-                    tokenUrl += EaseMsgUtils.APPKEY;
-                    tokenUrl += EaseMsgUtils.ADDAMARK;
-                    tokenUrl += getString(R.string.agora_app_id);
-                    tokenUrl += EaseMsgUtils.CHANNEL;
-                    tokenUrl += EaseMsgUtils.ADDAMARK;
-                    tokenUrl += channelName;
-                    tokenUrl += EaseMsgUtils.USERID;
-                    tokenUrl += EaseMsgUtils.ADDAMARK;
-                    tokenUrl += EMClient.getInstance().getCurrentUser();
-                    try {
-                        Pair<Integer,String> reponse = HttpClientManager.sendRequest(tokenUrl,null,null,Method_GET);
-                     EMLog.e(TAG,"reponse: " + reponse.toString());
-                     String token = null;
-                     if (TextUtils.isEmpty(token)) {
-                         EMLog.e(TAG,"token: " + token);
-                         //退出通话
-                         exitChannel();
-                     }
-                     mRtcEngine.joinChannel(token, channelName, null, 0);
-
-                    }catch (IOException exception){
-                        EMLog.e(TAG,"IOException errorCode: " +
-                                exception.getMessage());
-
-                        //退出通话
-                        exitChannel();
-                    }catch (HyphenateException exception){
-                        EMLog.e(TAG,"errorCode: " + exception.getErrorCode()
-                                + " Description:" + exception.getDescription());
-
-                        //退出通话
-                        exitChannel();
-                    }
-
                 default:
                     break;
             }
@@ -1173,6 +1135,26 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 e.getStackTrace();
             }
         }
+
+        //增加推送字段
+        JSONObject extObject = new JSONObject();
+        try {
+            EaseCallType type = EaseCallUIKit.getInstance().getCallType();
+            if(type == EaseCallType.SIGNAL_VOICE_CALL){
+                String info = getApplication().getString(R.string.alert_request_voice, EMClient.getInstance().getCurrentUser());
+                extObject.putOpt("em_push_title",info);
+                extObject.putOpt("em_push_content",info);
+            }else{
+                String info = getApplication().getString(R.string.alert_request_video, EMClient.getInstance().getCurrentUser());
+                extObject.putOpt("em_push_title",info);
+                extObject.putOpt("em_push_content",info);
+            }
+            extObject.putOpt("isRtcCall",true);
+            extObject.putOpt("callType",type.code);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        message.setAttribute("em_apns_ext", extObject);
 
         if(EaseCallUIKit.getInstance().getCallID() == null){
             EaseCallUIKit.getInstance().setCallID(EaseCallKitUtils.getRandomString(10));
