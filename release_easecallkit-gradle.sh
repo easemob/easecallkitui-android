@@ -40,7 +40,7 @@ function fetch_code_from_git() {
 	log_print "Start fetch EaseCallKit code from git ..."
 
 	# easecallkitui
-#	cd easeui;git fetch upstream; git clean -fd; git checkout -f; git checkout easemob/EaseCallKit; cd -;
+#	cd easecallkitui;git fetch upstream; git clean -fd; git checkout -f; git checkout upstream/master; cd -;
 
 	log_print "Fet EaseCallKit code from git finished"
 

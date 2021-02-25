@@ -49,7 +49,6 @@ import android.widget.Toast;
 import com.hyphenate.EMCallBack;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMCmdMessageBody;
-import com.hyphenate.chat.EMConferenceStream;
 import com.hyphenate.chat.EMConversation;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.util.EMLog;
@@ -109,7 +108,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
     private Group groupUseInfo;
     private Group groupOngoingSettings;
     private TextView nickTextView;
-    private EMConferenceStream oppositeStream;
     private boolean isMuteState = false;
     private boolean isHandsfreeState;
     private ImageView muteImage;

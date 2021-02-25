@@ -11,24 +11,19 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import com.hyphenate.chat.EMClient;
-import com.hyphenate.chat.EMConferenceStream;
 import com.hyphenate.easecallkit.R;
 import com.hyphenate.easecallkit.ui.EaseMultipleVideoActivity;
 import com.hyphenate.easecallkit.ui.EaseVideoCallActivity;
 import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
 import io.agora.rtc.RtcEngine;
-import io.agora.rtc.models.UserInfo;
 import io.agora.rtc.video.VideoCanvas;
-
-import com.hyphenate.media.EMCallSurfaceView;
 import com.hyphenate.util.EMLog;
-import com.superrtc.sdk.VideoView;
+
 
 import static com.superrtc.ContextUtils.getApplicationContext;
 

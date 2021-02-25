@@ -10,10 +10,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.Scroller;
-
 import com.hyphenate.util.EMLog;
 
 import androidx.annotation.Nullable;
