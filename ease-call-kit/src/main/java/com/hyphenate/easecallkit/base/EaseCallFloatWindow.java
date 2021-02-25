@@ -16,6 +16,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import com.hyphenate.chat.EMClient;
+import com.hyphenate.easecallkit.EaseCallKit;
 import com.hyphenate.easecallkit.R;
 import com.hyphenate.easecallkit.ui.EaseMultipleVideoActivity;
 import com.hyphenate.easecallkit.ui.EaseVideoCallActivity;
@@ -23,9 +24,6 @@ import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
 import io.agora.rtc.RtcEngine;
 import io.agora.rtc.video.VideoCanvas;
 import com.hyphenate.util.EMLog;
-
-
-import static com.superrtc.ContextUtils.getApplicationContext;
 
 
 /**
@@ -233,7 +231,7 @@ public class EaseCallFloatWindow {
         RelativeLayout surfaceLayout = (RelativeLayout) floatView.findViewById(R.id.layout_call_video);
         surfaceLayout.removeAllViews();
         surfaceView =
-                RtcEngine.CreateRendererView(getApplicationContext());
+                RtcEngine.CreateRendererView(EaseCallKit.getInstance().getAppContext());
         surfaceLayout.addView(surfaceView);
         surfaceView.setZOrderOnTop(false);
         surfaceView.setZOrderMediaOverlay(false);
