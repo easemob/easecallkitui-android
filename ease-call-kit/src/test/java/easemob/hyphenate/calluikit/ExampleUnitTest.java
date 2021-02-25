@@ -1,4 +1,4 @@
-package easemob.hyphenate.calluikit;
+package com.hyphenate.easecallkit;
 
 import org.junit.Test;
 

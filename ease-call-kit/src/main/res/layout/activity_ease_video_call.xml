@@ -23,7 +23,7 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
 
-    <easemob.hyphenate.calluikit.widget.EaseImageView
+    <com.hyphenate.easecallkit.widget.EaseImageView
         android:id="@+id/iv_avatar"
         android:layout_width="80dp"
         android:layout_height="80dp"
@@ -74,7 +74,7 @@
         android:background="@drawable/call_bg_ring"/>
 
 
-    <easemob.hyphenate.calluikit.widget.EaseImageView
+    <com.hyphenate.easecallkit.widget.EaseImageView
         android:id="@+id/iv_avatar_voice"
         android:layout_width="80dp"
         android:layout_height="80dp"
@@ -266,7 +266,7 @@
         app:layout_constraintRight_toRightOf="@id/btn_hangup_call"
         app:layout_constraintTop_toBottomOf="@id/btn_hangup_call"/>
 
-    <easemob.hyphenate.calluikit.widget.MyChronometer
+    <com.hyphenate.easecallkit.widget.MyChronometer
         android:id="@+id/chronometer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
