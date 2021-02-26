@@ -34,7 +34,8 @@ android {
 
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    //implementation fileTree(dir: 'libs', include: ['*.jar'])
+    //api project(':hyphenatechatsdk')
     implementation 'com.hyphenate:hyphenate-sdk-lite:3.7.4'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
