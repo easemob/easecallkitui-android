@@ -56,4 +56,11 @@ public interface EaseCallKitListener{
      * @param description   错误描述
      */
     void onCallError(EaseCallKit.EaseCallError type, int errorCode, String description);
+
+
+    /**
+     * 通话邀请消息回调
+     *
+     */
+    void onInViteCallMessageSent();
 }

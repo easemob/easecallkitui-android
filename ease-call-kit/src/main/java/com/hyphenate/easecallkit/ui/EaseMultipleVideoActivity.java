@@ -1051,6 +1051,7 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
      * @param callType
      */
     private void sendInviteeMsg(ArrayList<String> userArray, EaseCallType callType){
+        EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
         for(String username:userArray){
 
             //放入超时时间
@@ -1123,17 +1124,18 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                 @Override
                 public void onSuccess() {
                     EMLog.d(TAG, "Invite call success username:" + username);
-                    conversation.removeMessage(message.getMsgId());
+                    if(listener != null){
+                        listener.onInViteCallMessageSent();
+                    }
                 }
 
                 @Override
                 public void onError(int code, String error) {
                     EMLog.e(TAG, "Invite call error " + code + ", " + error + " username:" + username);
-                    conversation.removeMessage(message.getMsgId());
-
-                    EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
+                    
                     if(listener != null){
                         listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
+                        listener.onInViteCallMessageSent();
                     }
                 }
 

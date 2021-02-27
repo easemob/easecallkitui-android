@@ -187,6 +187,11 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    isHandsfreeState = true;
+                    openSpeakerOn();
+                    if(EaseCallKit.getInstance().getCallType() == EaseCallType.SINGLE_VOICE_CALL){
+                        handsFreeImage.setImageResource(R.drawable.em_icon_speaker_on);
+                    }
                     if(!isInComingCall){
                         //发送邀请信息
                         if(EaseCallKit.getInstance().getCallType() == EaseCallType.SINGLE_VIDEO_CALL){
@@ -194,9 +199,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                         }else{
                             handler.sendEmptyMessage(EaseMsgUtils.MSG_MAKE_SIGNAL_VOICE);
                         }
-                        isHandsfreeState = true;
-                        openSpeakerOn();
-                        handsFreeImage.setImageResource(R.drawable.em_icon_speaker_on);
                         //开始定时器
                         timehandler.startTime();
                     }
@@ -239,7 +241,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 @Override
                 public void run() {
                     //检测到对方进来
-                    makeOngoingStatus();
+                 //   makeOngoingStatus();
                 }
             });
         }
@@ -284,7 +286,9 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 public void run() {
                         remoteUId = uid;
                         chronometer.start();
-                        handsFreeImage.setImageResource(R.drawable.em_icon_speaker_on);
+                        if(EaseCallKit.getInstance().getCallType() == EaseCallType.SINGLE_VOICE_CALL){
+                            handsFreeImage.setImageResource(R.drawable.em_icon_speaker_on);
+                        }
                 }
             });
         }
@@ -301,6 +305,9 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                             callType = EaseCallType.SINGLE_VOICE_CALL;
                             EaseCallKit.getInstance().setCallType(EaseCallType.SINGLE_VOICE_CALL);
                             EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
+                            isHandsfreeState = true;
+                            openSpeakerOn();
+                            handsFreeImage.setImageResource(R.drawable.em_icon_speaker_on);
                             changeVideoVoiceState();
                             if(mRtcEngine != null){
                                 mRtcEngine.muteLocalVideoStream(true);
@@ -477,7 +484,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             //开始振铃
             Uri ringUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
             audioManager.setMode(AudioManager.MODE_RINGTONE);
-            audioManager.setSpeakerphoneOn(true);
             if(ringUri != null){
                 ringtone = RingtoneManager.getRingtone(this, ringUri);
             }
@@ -514,11 +520,10 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
      * 通话中的状态
      */
     private void makeOngoingStatus() {
-        voiceContronlLayout.setVisibility(View.VISIBLE);
+
         comingBtnContainer.setVisibility(View.INVISIBLE);
         groupUseInfo.setVisibility(View.INVISIBLE);
         groupHangUp.setVisibility(View.VISIBLE);
-
         if(callType == EaseCallType.SINGLE_VIDEO_CALL){
             groupOngoingSettings.setVisibility(View.VISIBLE);
             localSurface_layout.setVisibility(View.VISIBLE);
@@ -527,7 +532,9 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             hangupBtn.setVisibility(View.VISIBLE);
             videoCallingGroup.setVisibility(View.GONE);
             voiceCallingGroup.setVisibility(View.GONE);
+            voiceContronlLayout.setVisibility(View.GONE);
         }else{
+            voiceContronlLayout.setVisibility(View.VISIBLE);
             groupOngoingSettings.setVisibility(View.VISIBLE);
             avatarView.setVisibility(View.VISIBLE);
             localSurface_layout.setVisibility(View.GONE);
@@ -632,9 +639,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         localSurface_layout.addView(localView);
         mLocalVideo = new VideoCanvas(localView, VideoCanvas.RENDER_MODE_HIDDEN, 0);
         mRtcEngine.setupLocalVideo(mLocalVideo);
-
-        //设置在通话中的状态
-        // makeOngoingStatus();
     }
 
     /**
@@ -754,6 +758,9 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 callType = EaseCallType.SINGLE_VOICE_CALL;
                 EaseCallKit.getInstance().setCallType(EaseCallType.SINGLE_VOICE_CALL);
                 EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
+                isHandsfreeState = true;
+                openSpeakerOn();
+                handsFreeImage.setImageResource(R.drawable.em_icon_speaker_on);
                 changeVideoVoiceState();
                 if(mRtcEngine != null){
                     mRtcEngine.muteLocalVideoStream(true);
@@ -1104,6 +1111,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
     private void sendInviteeMsg(String username, EaseCallType callType){
         mConfirm_ring = false;
         final EMMessage message;
+        EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
         if(callType == EaseCallType.SINGLE_VIDEO_CALL){
             message = EMMessage.createTxtSendMessage( "邀请您进行视频通话", username);
         }else{
@@ -1158,17 +1166,18 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             @Override
             public void onSuccess() {
                 EMLog.d(TAG, "Invite call success");
-                conversation.removeMessage(message.getMsgId());
+                if(listener != null){
+                    listener.onInViteCallMessageSent();
+                }
             }
 
             @Override
             public void onError(int code, String error) {
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
-                conversation.removeMessage(message.getMsgId());
-
                 EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                 if(listener != null){
                     listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
+                    listener.onInViteCallMessageSent();
                 }
             }
 
