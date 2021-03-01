@@ -33,14 +33,14 @@ function get_sdk_version() {
 		exit 1
 	fi
 	cd -;
-	cd easecallkitui;
+	cd easecallkitui-android;
 }
 
 function fetch_code_from_git() {
 	log_print "Start fetch EaseCallKit code from git ..."
 
-	# easecallkitui
-#	cd easeui;git fetch upstream; git clean -fd; git checkout -f; git checkout easemob/EaseCallKit; cd -;
+	#callkit
+	cd easecallkitui-android;git fetch upstream; git clean -fd; git checkout -f; git checkout upstream/master; cd -;
 
 	log_print "Fet EaseCallKit code from git finished"
 
@@ -54,7 +54,7 @@ function prepare() {
 function add_tag() {
 	TAG=$1
         echo "add tag $TAG"
-        (echo "ease-call-kit"; cd easecallkitui; git tag $TAG; git push origin $TAG;)
+        (echo "ease-call-kit"; cd easecallkitui-android; git tag $TAG; git push origin $TAG;)
 }
 
 function bintray_upload() {

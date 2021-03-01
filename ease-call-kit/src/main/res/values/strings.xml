@@ -1,8 +1,4 @@
 <resources>
-    <!--    <string name="agora_app_id">d2d1af30f5fb483bbef2c9f7ace22f4a</string>-->
-    <string name="agora_app_id">15cb0d28b87b425ea613fc46f7c9f974</string>
-    <string name="agora_app_cert">83296b9cabbc442b97a1895871595cc5</string>
-
     <string name="switch_camera">切换摄像头</string>
     <string name="answer">接听</string>
     <string name="change_voice">转音频</string>
@@ -25,9 +21,9 @@
     <string name="wait_calling">等待接听</string>
     <string name="wait_recive">等待接听</string>
 
-    <string name="alert_request_video">%1$s发来视频请求</string>
-    <string name="alert_request_voice">%1$s发来语音请求</string>
-    <string name="alert_request_multiple_video">%1$s发来多人视频请求</string>
+    <string name="alert_request_video">%1$s 发起视频邀请</string>
+    <string name="alert_request_voice">%1$s 发起语音邀请</string>
+    <string name="alert_request_multiple_video">%1$s 发起多人视频邀请</string>
 
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>

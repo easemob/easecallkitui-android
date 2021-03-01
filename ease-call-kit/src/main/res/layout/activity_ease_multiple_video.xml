@@ -46,7 +46,7 @@
         android:layout_marginBottom="222dp"
         android:background="#858585"
         android:orientation="vertical">
-        <easemob.hyphenate.calluikit.base.EaseCallMemberViewGroup
+        <com.hyphenate.easecallkit.base.EaseCallMemberViewGroup
             android:id="@+id/surface_view_group"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -166,7 +166,7 @@
             android:layout_marginBottom="10dp"
             android:gravity="center"/>
     </RelativeLayout>
-    <easemob.hyphenate.calluikit.ui.EaseCommingCallView
+    <com.hyphenate.easecallkit.ui.EaseCommingCallView
         android:id="@+id/incoming_call_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
