@@ -43,6 +43,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -962,21 +963,20 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                 String time = dateFormat.format(timePassed * 1000);
                 if(!isInComingCall){ //如果是主叫
                     long totalMilliSeconds = System.currentTimeMillis();
-                    Set<String> userSet = inViteUserMap.keySet();
-                    for(String userName: userSet){
+                    Iterator<String> it_user = inViteUserMap.keySet().iterator();
+                    while(it_user.hasNext()){
+                        String userName = it_user.next();
                         //判断当前时间是否超时
                         if(totalMilliSeconds >= inViteUserMap.get(userName)){
                             //发送取消事件
                             CallCancelEvent cancelEvent = new CallCancelEvent();
                             sendCmdMsg(cancelEvent,userName);
-                            inViteUserMap.remove(userName);
-
-                            //删除占位符
+                            it_user.remove();
                             EaseCallMemberView memberView = placeholderList.remove(userName);
                             if(memberView != null){
                                 callConferenceViewGroup.removeView(memberView);
                             }
-                        }
+                      }
                     }
                     if(inViteUserMap.size() == 0){
                         timehandler.stopTime();
@@ -1279,14 +1279,14 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                         if(timehandler != null){
                             timehandler.stopTime();
                         }
-                        Set<String> userSet = inViteUserMap.keySet();
-                        for(String userName: userSet){
+
+                        Iterator<String> it_user = inViteUserMap.keySet().iterator();
+                        while(it_user.hasNext()){
+                            String userName = it_user.next();
                             //发送取消事件
                             CallCancelEvent cancelEvent = new CallCancelEvent();
                             sendCmdMsg(cancelEvent,userName);
-                            inViteUserMap.remove(userName);
-
-                            //取消占位符
+                            it_user.remove();
                             EaseCallMemberView memberView = placeholderList.remove(userName);
                             if(memberView != null){
                                 callConferenceViewGroup.removeView(memberView);
