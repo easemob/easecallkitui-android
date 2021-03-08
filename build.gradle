@@ -2,16 +2,18 @@
 buildscript {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
+        maven {
+            url 'https://maven.aliyun.com/repository/public/'
+        }
     }
     dependencies {
         classpath "com.android.tools.build:gradle:3.5.2"
 
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
-
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
+        //Automating closing and releasing
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.22.0"
     }
 }
 
@@ -19,12 +21,18 @@ ext{
     if(!project.hasProperty('sdkVersion')){
         sdkVersion = '3.2.3'
     }
+    if(!project.hasProperty('stagingRepositoryId')){
+        stagingRepositoryId = 'iohyphenate-1000'
+    }
 }
 
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
+        maven {
+            url 'https://maven.aliyun.com/repository/public/'
+        }
         maven{url 'https://jitpack.io'}
     }
 }
@@ -41,4 +49,6 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-tasks.getByPath(":ease-call-kit:javadoc").enabled = false
+apply plugin: 'io.codearte.nexus-staging'
+
+//tasks.getByPath(":ease-call-kit:javadoc").enabled = false
