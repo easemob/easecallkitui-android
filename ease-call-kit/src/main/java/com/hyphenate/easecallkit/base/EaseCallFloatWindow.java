@@ -118,10 +118,10 @@ public class EaseCallFloatWindow {
                 Intent intent;
                 if(callType == EaseCallType.CONFERENCE_CALL){
                     intent = new Intent(context, EaseMultipleVideoActivity.class);
-                    if(memberView != null){
-                        intent.putExtra("uId", memberView.getUserId());
-                        intent.putExtra("isFloatWindow", true);
-                    }
+//                    if(memberView != null){
+//                        intent.putExtra("uId", memberView.getUserId());
+//                        intent.putExtra("isFloatWindow", true);
+//                    }
                 }else{
                     intent = new Intent(context, EaseVideoCallActivity.class);
                     intent.putExtra("uId", uId);
@@ -210,7 +210,18 @@ public class EaseCallFloatWindow {
     }
 
     public boolean isShowing() {
-        return floatView != null;
+        if(callType == EaseCallType.CONFERENCE_CALL){
+            return memberView != null;
+        }else{
+            return floatView != null;
+        }
+    }
+
+    public int getUid() {
+        if(callType == EaseCallType.CONFERENCE_CALL && memberView != null) {
+            return memberView.getUserId();
+        }
+        return -1;
     }
 
     /**

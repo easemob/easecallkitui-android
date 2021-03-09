@@ -241,7 +241,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 @Override
                 public void run() {
                     //检测到对方进来
-                 //   makeOngoingStatus();
+                    makeOngoingStatus();
                 }
             });
         }
@@ -520,7 +520,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
      * 通话中的状态
      */
     private void makeOngoingStatus() {
-
         comingBtnContainer.setVisibility(View.INVISIBLE);
         groupUseInfo.setVisibility(View.INVISIBLE);
         groupHangUp.setVisibility(View.VISIBLE);
@@ -880,13 +879,12 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             rootView.setBackground(getResources().getDrawable(R.drawable.call_bg_voice));
 
             //已经在通话中
-            if(videoCalledGroup.getVisibility() == View.VISIBLE){
+            if(EaseCallKit.getInstance().getCallState() == EaseCallState.CALL_ANSWERED){
                 //语音通话UI可见
                 Voice_View.setVisibility(View.VISIBLE);
                 avatarView.setVisibility(View.VISIBLE);
                 tv_call_state_voice.setText("通话中");
                 makeOngoingStatus();
-
             }else{
                 localSurface_layout.setVisibility(View.GONE);
                 oppositeSurface_layout.setVisibility(View.GONE);
@@ -906,7 +904,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 voiceCallingGroup.setVisibility(View.VISIBLE);
                 tv_nick_voice.setText(EaseCallKitUtils.getUserNickName(username));
             }
-
             loadHeadImage();
         }
     }
@@ -1581,6 +1578,9 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 EMLog.i(TAG, "exit channel channelName: " + channelName);
                 if(isInComingCall){
                    stopPlayRing();
+                }
+                if(EaseCallFloatWindow.getInstance(getApplicationContext()).isShowing()){
+                    EaseCallFloatWindow.getInstance(getApplicationContext()).dismiss();
                 }
                 finish();
             }
