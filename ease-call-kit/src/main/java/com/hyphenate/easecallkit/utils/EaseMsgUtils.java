@@ -8,13 +8,6 @@ package com.hyphenate.easecallkit.utils;
  * date: 01/11/2021
  */
 public class EaseMsgUtils {
-    public static String TOKEN_SERVER = "http://172.17.2.159:8080/token?";
-
-    public static String lijian66_Token = "006d2d1af30f5fb483bbef2c9f7ace22f4aIABjFQlCXSNxc8LnTG7G8cKvYFbaJiAB5X3cxFMn1n/6NCLLri0LKHBGIgAAAAAAoVgBYAQAAQAxFQBgAgAxFQBgAwAxFQBgBAAxFQBg";
-
-    public static String lijian88_Token = " 006d2d1af30f5fb483bbef2c9f7ace22f4aIAAaBzfiLA1VwZItxfhkytztzVs/h9NIpvVA23gqH6NXjpiap7SCKEs/IgAAAAAAHXcBYAQAAQCtMwBgAgCtMwBgAwCtMwBgBACtMwBg";
-
-
     public static int MSG_MAKE_SIGNAL_VOICE = 100;
     public static int MSG_MAKE_SIGNAL_VIDEO = 101;
     public static int MSG_MAKE_CONFERENCE_VIDEO = 102;
@@ -40,14 +33,8 @@ public class EaseMsgUtils {
     public static String CALL_ANSWER_ACCEPT = "accept";
     public static String CALL_ANSWER_REFUSE = "refuse";
 
-    public static String APPCERT = "appCert";
-    public static String APPKEY = "appKey";
-    public static String CHANNEL = "channel";
-    public static String USERID = "userId";
-    public static String ADDAMARK = "+";
 
     public static String CALL_INVITE_EXT = "ext";
-    public static String CALL_GROUP_ID = "groupId";
 
     final public static int CALL_TIMER_TIMEOUT = 0;
     final public static int CALL_TIMER_CALL_TIME = 1;

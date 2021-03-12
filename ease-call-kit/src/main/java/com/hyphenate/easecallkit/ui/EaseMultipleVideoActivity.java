@@ -1,6 +1,7 @@
 package com.hyphenate.easecallkit.ui;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,8 +21,14 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -677,13 +684,12 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                 mRtcEngine.switchCamera();
             }
         }else if(view.getId() == R.id.btn_hangup){
-            exitChannel();
-
             EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
             if(listener != null){
                 long time = timeUpdataTimer.timePassed;
                 listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonHangup,timeUpdataTimer.timePassed*1000);
             }
+            exitChannel();
         }else if(view.getId() == R.id.btn_float){
             showFloatWindow();
         }else if(view.getId() == R.id.btn_invite){
@@ -1315,6 +1321,12 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                 if(EaseCallFloatWindow.getInstance(getApplicationContext()).isShowing()){
                     EaseCallFloatWindow.getInstance(getApplicationContext()).dismiss();
                 }
+
+                //重置状态
+                EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDEL);
+                EaseCallKit.getInstance().setCallID(null);
+                EaseCallKit.getInstance().setMultipleVideoActivity(null);
+
                 finish();
             }
         });
@@ -1374,6 +1386,7 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
 
     @Override
     protected void onNewIntent(Intent intent) {
+        EMLog.d(TAG,"TEST onNewIntent");
         super.onNewIntent(intent);
         ArrayList<String> users = EaseCallKit.getInstance().getInviteeUsers();
         if(users != null && users.size()> 0){
@@ -1426,6 +1439,8 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
         handler.sendEmptyMessage(EaseMsgUtils.MSG_RELEASE_HANDLER);
     }
 
+    
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -1447,10 +1462,67 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
         }
         leaveChannel();
         RtcEngine.destroy();
+    }
 
-        //重置状态
-        EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDEL);
-        EaseCallKit.getInstance().setCallID(null);
-        EaseCallKit.getInstance().setMultipleVideoActivity(null);
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // 是否触发按键为back键
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            onBackPressed();
+            return true;
+        }else{
+            // 如果不是back键正常响应
+            return super.onKeyDown(keyCode, event);
+        }
+    }
+
+    @Override
+    protected void onUserLeaveHint() {
+        Log.d(TAG,"onUserLeaveHint");
+        super.onUserLeaveHint();
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        exitChannelDisplay();
+    }
+
+
+    /**
+     * 是否退出当前通话提示框
+     */
+    public void exitChannelDisplay() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(EaseMultipleVideoActivity.this);
+        final AlertDialog dialog = builder.create();
+        View dialogView = View.inflate(EaseMultipleVideoActivity.this, R.layout.activity_exit_channel, null);
+        dialog.setView(dialogView);
+
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        WindowManager.LayoutParams wmlp = dialog.getWindow().getAttributes();
+        wmlp.gravity = Gravity.CENTER | Gravity.CENTER;
+        dialog.show();
+
+        final Button btn_ok = dialogView.findViewById(R.id.btn_ok);
+        final Button btn_cancel = dialogView.findViewById(R.id.btn_cancel);
+        final TextView text_view = dialogView.findViewById(R.id.info_view);
+        String infoStr = "确定要离开当前通话";
+        text_view.setText(infoStr);
+        btn_ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+                EMLog.e(TAG, "exitChannelDisplay  exit channel:");
+                exitChannel();
+            }
+        });
+
+        btn_cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+                EMLog.e(TAG, "exitChannelDisplay not exit channel");
+            }
+        });
     }
 };
