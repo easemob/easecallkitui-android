@@ -64,22 +64,7 @@ public class EaseCallKitUtils {
         // 渠道标志
         deviceId.append("a");
         try {
-            //IMEI（imei）
-            TelephonyManager tm = (TelephonyManager) EaseCallKit.getInstance().getAppContext().getSystemService(Context.TELEPHONY_SERVICE);
-            String imei = tm.getDeviceId();
-            if(!TextUtils.isEmpty(imei)){
-                deviceId.append("imei");
-                deviceId.append(imei);
-                return deviceId.toString();
-            }
-            //序列号（sn）
-            String sn = tm.getSimSerialNumber();
-            if(!TextUtils.isEmpty(sn)){
-                deviceId.append("sn");
-                deviceId.append(sn);
-                return deviceId.toString();
-            }
-            //如果上面都没有， 则生成一个id：随机码
+            // 则生成一个id：随机码
             String uuid = getUUID();
             if(!TextUtils.isEmpty(uuid)){
                 deviceId.append("id");
@@ -118,7 +103,7 @@ public class EaseCallKitUtils {
             if(userInfoMap != null){
                 EaseCallUserInfo userInfo = userInfoMap.get(uersId);
                 if(userInfo != null){
-                    if(userInfo.getHeadImage() != null){
+                    if(userInfo.getHeadImage() != null && userInfo.getHeadImage().length() > 0){
                         return userInfo.getHeadImage();
                     }
                 }
@@ -140,7 +125,7 @@ public class EaseCallKitUtils {
             if(userInfoMap != null){
                 EaseCallUserInfo userInfo = userInfoMap.get(uersId);
                 if(userInfo != null){
-                    if(userInfo.getNickName() != null){
+                    if(userInfo.getNickName() != null && userInfo.getNickName().length() > 0){
                         return userInfo.getNickName();
                     }
                 }

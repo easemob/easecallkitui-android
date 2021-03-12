@@ -225,6 +225,12 @@ public class EaseCallKit {
      * @param ext  扩展字段(用户扩展字段)
      */
     public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext){
+        if(callState != EaseCallState.CALL_IDEL){
+            if(callListener != null){
+                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy");
+            }
+            return;
+        }
         if(users == null || users.length  == 0) {
             if(!isDestroy(multipleVideoActivity)){
                 inviteeUsers.clear();
