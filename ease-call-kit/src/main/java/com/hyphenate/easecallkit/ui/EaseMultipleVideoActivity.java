@@ -1505,9 +1505,6 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
 
         final Button btn_ok = dialogView.findViewById(R.id.btn_ok);
         final Button btn_cancel = dialogView.findViewById(R.id.btn_cancel);
-        final TextView text_view = dialogView.findViewById(R.id.info_view);
-        String infoStr = "确定要离开当前通话";
-        text_view.setText(infoStr);
         btn_ok.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
