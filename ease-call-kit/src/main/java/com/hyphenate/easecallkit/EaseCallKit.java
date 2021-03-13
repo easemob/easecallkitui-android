@@ -225,7 +225,7 @@ public class EaseCallKit {
      * @param ext  扩展字段(用户扩展字段)
      */
     public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext){
-        if(callState != EaseCallState.CALL_IDLE){
+        if(callState != EaseCallState.CALL_IDLE && callType != EaseCallType.CONFERENCE_CALL){
             if(callListener != null){
                 callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy");
             }
