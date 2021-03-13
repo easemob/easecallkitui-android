@@ -1590,7 +1590,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 }
 
                 //重置状态
-                EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDEL);
+                EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDLE);
                 EaseCallKit.getInstance().setCallID(null);
 
                 finish();

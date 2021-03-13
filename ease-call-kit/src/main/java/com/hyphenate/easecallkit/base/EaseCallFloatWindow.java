@@ -125,14 +125,11 @@ public class EaseCallFloatWindow {
             public void onClick(View v) {
                 Intent intent;
                 if(callType == EaseCallType.CONFERENCE_CALL){
-                    EaseMultipleVideoActivity callActivity = new EaseMultipleVideoActivity();
-                    intent = new Intent(EaseCallKit.getInstance().getAppContext(), callActivity.getClass()).addFlags(FLAG_ACTIVITY_NEW_TASK);
+                    intent = new Intent(EaseCallKit.getInstance().getAppContext(), EaseMultipleVideoActivity.class).addFlags(FLAG_ACTIVITY_NEW_TASK);
                 }else{
-                    EaseVideoCallActivity callActivity = new EaseVideoCallActivity();
-                    intent = new Intent(EaseCallKit.getInstance().getAppContext(), callActivity.getClass()).addFlags(FLAG_ACTIVITY_NEW_TASK);
+                    intent = new Intent(EaseCallKit.getInstance().getAppContext(), EaseVideoCallActivity.class).addFlags(FLAG_ACTIVITY_NEW_TASK);
                     intent.putExtra("uId", uId);
                 }
-                EMLog.d(TAG,"TEST EaseCallFloatWindow onClick");
                 intent.putExtra("isClickByFloat", true);
                 EaseCallKit.getInstance().getAppContext().startActivity(intent);
                 dismiss();
