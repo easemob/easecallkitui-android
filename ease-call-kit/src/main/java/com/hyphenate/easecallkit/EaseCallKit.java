@@ -66,7 +66,7 @@ public class EaseCallKit {
     private Context appContext = null;
     private EMMessageListener messageListener = null;
     private EaseCallType callType = EaseCallType.SINGLE_VIDEO_CALL;
-    private EaseCallState callState = EaseCallState.CALL_IDEL;
+    private EaseCallState callState = EaseCallState.CALL_IDLE;
     private String channelName;
     private String fromUserId; //被叫获取主叫的
     public static String deviceId = "android_";
@@ -179,7 +179,7 @@ public class EaseCallKit {
      * @param ext  扩展字段(用户扩展字段)
      */
     public void startSingleCall(final EaseCallType type, final String user,final  Map<String, Object> ext){
-        if(callState != EaseCallState.CALL_IDEL){
+        if(callState != EaseCallState.CALL_IDLE){
             if(callListener != null){
                 callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy");
             }
@@ -225,6 +225,12 @@ public class EaseCallKit {
      * @param ext  扩展字段(用户扩展字段)
      */
     public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext){
+        if(callState != EaseCallState.CALL_IDLE && callType != EaseCallType.CONFERENCE_CALL){
+            if(callListener != null){
+                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy");
+            }
+            return;
+        }
         if(users == null || users.length  == 0) {
             if(!isDestroy(multipleVideoActivity)){
                 inviteeUsers.clear();
@@ -307,7 +313,7 @@ public class EaseCallKit {
                                         (EaseMsgUtils.CALL_TYPE, 0);
                                 EaseCallType callkitType =
                                         EaseCallType.getfrom(calltype);
-                                if (callState != EaseCallState.CALL_IDEL) {
+                                if (callState != EaseCallState.CALL_IDLE) {
                                     if (fromCallId.equals(callID) &&
                                             fromUser.equals(fromUserId)
                                             && callkitType == EaseCallType.SINGLE_VOICE_CALL && callType == EaseCallType.SINGLE_VIDEO_CALL) {
@@ -370,7 +376,7 @@ public class EaseCallKit {
                         EaseCallAction callAction = EaseCallAction.getfrom(action);
                         switch (callAction){
                             case CALL_CANCEL: //取消通话
-                                if(callState == EaseCallState.CALL_IDEL){
+                                if(callState == EaseCallState.CALL_IDLE){
                                     timeHandler.stopTime();
                                     //取消呼叫
                                     callInfoMap.remove(fromCallId);
@@ -380,7 +386,7 @@ public class EaseCallKit {
                                     event.callId = fromCallId;
                                     event.userId = fromUser;
                                     if(callID.equals(fromCallId)){
-                                        callState = EaseCallState.CALL_IDEL;
+                                        callState = EaseCallState.CALL_IDLE;
                                     }
                                     notifier.reset();
                                     //发布消息
@@ -407,7 +413,7 @@ public class EaseCallKit {
                                         callInfoMap.remove(fromCallId);
                                     }else{
                                         //收到callId 有效
-                                        if(callState == EaseCallState.CALL_IDEL){
+                                        if(callState == EaseCallState.CALL_IDLE){
                                             callState = EaseCallState.CALL_ALERTING;
                                             //对方主叫的设备信息
                                             clallee_devId = callerDevId;
@@ -479,7 +485,7 @@ public class EaseCallKit {
                                 }
                                 break;
                             case CALL_VIDEO_TO_VOICE:
-                                if (callState != EaseCallState.CALL_IDEL) {
+                                if (callState != EaseCallState.CALL_IDLE) {
                                     if (fromCallId.equals(callID) &&
                                             fromUser.equals(fromUserId)) {
                                         InviteEvent inviteEvent = new InviteEvent();
@@ -677,7 +683,7 @@ public class EaseCallKit {
 
                     //呼叫超时
                     timeHandler.stopTime();
-                    callState = EaseCallState.CALL_IDEL;
+                    callState = EaseCallState.CALL_IDLE;
                 }
                 sendEmptyMessageDelayed(MSG_TIMER, 1000);
             }else if(msg.what == MSG_START_ACTIVITY){

@@ -6,7 +6,7 @@ package com.hyphenate.easecallkit.utils;
  * date: 01/11/2021
  */
 public enum EaseCallState {
-    CALL_IDEL(0), //初始状态
+    CALL_IDLE(0), //初始状态
     CALL_OUTGOING(1), //拨打电话状态
     CALL_ALERTING(2),   //振铃状态
     CALL_ANSWERED(3); //接通同话状态
@@ -20,7 +20,7 @@ public enum EaseCallState {
     public static EaseCallState getfrom(int code) {
         switch (code) {
             case 0:
-                return CALL_IDEL;
+                return CALL_IDLE;
             case 1:
                 return CALL_OUTGOING;
             case 2:
@@ -28,7 +28,7 @@ public enum EaseCallState {
             case 3:
                 return CALL_ANSWERED;
             default:
-                return CALL_IDEL;
+                return CALL_IDLE;
         }
     }
 }
