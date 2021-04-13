@@ -35,16 +35,18 @@ android {
 
 dependencies {
     //implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.hyphenate:hyphenate-chat:3.8.0'
+    //api project(':hyphenatechatsdk')
+    implementation 'com.hyphenate:hyphenate-chat:3.8.1'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
     implementation 'com.google.android.material:material:1.2.1'
     implementation 'androidx.navigation:navigation-fragment:2.3.2'
     implementation 'androidx.navigation:navigation-ui:2.3.2'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-    implementation 'io.agora.rtc:full-sdk:3.2.1'
+    implementation 'io.agora.rtc:full-sdk:3.3.0'
 }
-
 
 //apply from: "../upload_aar.gradle"
 //apply from: 'https://raw.githubusercontent.com/blundell/release-android-library/master/android-release-aar.gradle'
+
+//apply from: "../maven-push-release.gradle"
