@@ -18,6 +18,7 @@ import com.hyphenate.easecallkit.base.EaseCallKitListener;
 import com.hyphenate.easecallkit.base.EaseCallType;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -36,9 +37,14 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -241,7 +247,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 @Override
                 public void run() {
                     //检测到对方进来
-                 //   makeOngoingStatus();
+                    makeOngoingStatus();
                 }
             });
         }
@@ -520,7 +526,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
      * 通话中的状态
      */
     private void makeOngoingStatus() {
-
         comingBtnContainer.setVisibility(View.INVISIBLE);
         groupUseInfo.setVisibility(View.INVISIBLE);
         groupHangUp.setVisibility(View.VISIBLE);
@@ -880,13 +885,12 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             rootView.setBackground(getResources().getDrawable(R.drawable.call_bg_voice));
 
             //已经在通话中
-            if(videoCalledGroup.getVisibility() == View.VISIBLE){
+            if(EaseCallKit.getInstance().getCallState() == EaseCallState.CALL_ANSWERED){
                 //语音通话UI可见
                 Voice_View.setVisibility(View.VISIBLE);
                 avatarView.setVisibility(View.VISIBLE);
                 tv_call_state_voice.setText("通话中");
                 makeOngoingStatus();
-
             }else{
                 localSurface_layout.setVisibility(View.GONE);
                 oppositeSurface_layout.setVisibility(View.GONE);
@@ -906,7 +910,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 voiceCallingGroup.setVisibility(View.VISIBLE);
                 tv_nick_voice.setText(EaseCallKitUtils.getUserNickName(username));
             }
-
             loadHeadImage();
         }
     }
@@ -1582,6 +1585,14 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 if(isInComingCall){
                    stopPlayRing();
                 }
+                if(EaseCallFloatWindow.getInstance(getApplicationContext()).isShowing()){
+                    EaseCallFloatWindow.getInstance(getApplicationContext()).dismiss();
+                }
+
+                //重置状态
+                EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDLE);
+                EaseCallKit.getInstance().setCallID(null);
+
                 finish();
             }
         });
@@ -1660,17 +1671,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         handler.sendEmptyMessage(EaseMsgUtils.MSG_RELEASE_HANDLER);
     }
 
-    @Override
-    protected void onResume() {
-        EMLog.d(TAG,"onResumed");
-        super.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        EMLog.d(TAG,"onPause");
-        super.onPause();
-    }
 
     @Override
     protected void onDestroy() {
@@ -1685,9 +1685,69 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         if(headBitMap != null){
             headBitMap.recycle();
         }
+    }
 
-        //重置状态
-        EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDEL);
-        EaseCallKit.getInstance().setCallID(null);
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // 是否触发按键为back键
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            onBackPressed();
+            return true;
+        }else{
+            // 如果不是back键正常响应
+            return super.onKeyDown(keyCode, event);
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        exitChannelDisplay();
+    }
+
+
+    /**
+     * 是否退出当前通话提示框
+     */
+    public void exitChannelDisplay() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(EaseVideoCallActivity.this);
+        final AlertDialog dialog = builder.create();
+        View dialogView = View.inflate(EaseVideoCallActivity.this, R.layout.activity_exit_channel, null);
+        dialog.setView(dialogView);
+
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        WindowManager.LayoutParams wmlp = dialog.getWindow().getAttributes();
+        wmlp.gravity = Gravity.CENTER | Gravity.CENTER;
+        dialog.show();
+
+        final Button btn_ok = dialogView.findViewById(R.id.btn_ok);
+        final Button btn_cancel = dialogView.findViewById(R.id.btn_cancel);
+        btn_ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+                EMLog.e(TAG, "exitChannelDisplay  exit channel:");
+                chronometer.stop();
+                if(remoteUId == 0){
+                    CallCancelEvent cancelEvent = new CallCancelEvent();
+                    sendCmdMsg(cancelEvent,username);
+                }else{
+                    exitChannel();
+                    EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
+                    if(listener != null){
+                        //通话结束原因挂断
+                        long time = getChronometerSeconds(chronometer);
+                        listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonHangup,time *1000);
+                    }
+                }
+            }
+        });
+
+        btn_cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+                EMLog.e(TAG, "exitChannelDisplay not exit channel");
+            }
+        });
     }
 }

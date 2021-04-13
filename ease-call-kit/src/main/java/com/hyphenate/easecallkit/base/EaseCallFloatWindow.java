@@ -1,6 +1,8 @@
 package com.hyphenate.easecallkit.base;
 
 import android.animation.ValueAnimator;
+import android.app.ActivityManager;
+import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
@@ -24,6 +26,10 @@ import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
 import io.agora.rtc.RtcEngine;
 import io.agora.rtc.video.VideoCanvas;
 import com.hyphenate.util.EMLog;
+
+import java.lang.reflect.Method;
+
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 
 /**
@@ -100,6 +106,8 @@ public class EaseCallFloatWindow {
         layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
 
         floatView = LayoutInflater.from(context).inflate(R.layout.activity_float_window, null);
+        floatView.setFocusableInTouchMode(true);
+
         windowManager.addView(floatView, layoutParams);
         floatView.post(new Runnable() {
             @Override
@@ -117,19 +125,13 @@ public class EaseCallFloatWindow {
             public void onClick(View v) {
                 Intent intent;
                 if(callType == EaseCallType.CONFERENCE_CALL){
-                    intent = new Intent(context, EaseMultipleVideoActivity.class);
-                    if(memberView != null){
-                        intent.putExtra("uId", memberView.getUserId());
-                        intent.putExtra("isFloatWindow", true);
-                    }
+                    intent = new Intent(EaseCallKit.getInstance().getAppContext(), EaseMultipleVideoActivity.class).addFlags(FLAG_ACTIVITY_NEW_TASK);
                 }else{
-                    intent = new Intent(context, EaseVideoCallActivity.class);
+                    intent = new Intent(EaseCallKit.getInstance().getAppContext(), EaseVideoCallActivity.class).addFlags(FLAG_ACTIVITY_NEW_TASK);
                     intent.putExtra("uId", uId);
                 }
                 intent.putExtra("isClickByFloat", true);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
-
+                EaseCallKit.getInstance().getAppContext().startActivity(intent);
                 dismiss();
             }
         });
@@ -177,6 +179,8 @@ public class EaseCallFloatWindow {
         });
     }
 
+
+
     public void update(EaseCallMemberView view) {
         if (floatView == null) {
             return;
@@ -210,7 +214,18 @@ public class EaseCallFloatWindow {
     }
 
     public boolean isShowing() {
-        return floatView != null;
+        if(callType == EaseCallType.CONFERENCE_CALL){
+            return memberView != null;
+        }else{
+            return floatView != null;
+        }
+    }
+
+    public int getUid() {
+        if(callType == EaseCallType.CONFERENCE_CALL && memberView != null) {
+            return memberView.getUserId();
+        }
+        return -1;
     }
 
     /**

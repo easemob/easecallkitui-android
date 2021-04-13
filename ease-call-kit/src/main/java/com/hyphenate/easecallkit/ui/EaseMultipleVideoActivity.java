@@ -1,6 +1,7 @@
 package com.hyphenate.easecallkit.ui;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,8 +21,14 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -145,6 +152,7 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
 
     private final HashMap<Integer, EaseCallMemberView> mUidsList = new HashMap<>();
     private final HashMap<Integer, UserInfo> userInfoList = new HashMap<>();
+    private final HashMap<String, Integer> userAccountList = new HashMap<>();
     private final HashMap<String, EaseCallMemberView> placeholderList = new HashMap<>();
     private final IRtcEngineEventHandler mRtcEventHandler = new IRtcEngineEventHandler() {
         @Override
@@ -169,8 +177,6 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
 
                     //邀请人就变为主叫
                     isInComingCall = false;
-                    //开始定时器
-                    timehandler.startTime(CALL_TIMER_TIMEOUT);
                 }
             }
         }
@@ -203,6 +209,9 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                 public void run() {
                     EMLog.d(TAG,"onUserOffline " + (uid & 0xFFFFFFFFL) + " account:" + userInfo.userAccount);
                     userInfoList.put(uid,userInfo);
+                    if(!userAccountList.containsValue(uid)){
+                        userAccountList.put(userInfo.userAccount,uid);
+                    }
 
                     //删除占位符
                     EaseCallMemberView placeView = placeholderList.remove(userInfo.userAccount);
@@ -243,6 +252,9 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                         return;
                     }
                     callConferenceViewGroup.removeView(memberView);
+                    if(userAccountList.containsValue(uid)){
+                        userAccountList.remove(userInfoList.get(uid).userAccount);
+                    }
 
                     int uid = 0;
                     if (mUidsList.size() > 0) { // 如果会议中有其他成员,则显示第一个成员
@@ -274,6 +286,9 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                         EaseCallMemberView memberView = mUidsList.get(uid);
                         if(userInfoList.containsKey(uid)){
                             memberView.setUserInfo(userInfoList.get(uid));
+                            if(!userAccountList.containsValue(uid)){
+                                userAccountList.put(userInfoList.get(uid).userAccount,uid);
+                            }
                         }
                         if(memberView != null){
                             //删除占位符
@@ -343,6 +358,9 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                         EaseCallMemberView placeView = placeholderList.remove(memberView.getUserAccount());
                         if(placeView != null){
                             callConferenceViewGroup.removeView(placeView);
+                        }
+                        if(!userAccountList.containsValue(uid)){
+                            userAccountList.put(userInfoList.get(uid).userAccount,uid);
                         }
                     }else {
                         final EaseCallMemberView memberView = new EaseCallMemberView(getApplicationContext());
@@ -666,13 +684,12 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                 mRtcEngine.switchCamera();
             }
         }else if(view.getId() == R.id.btn_hangup){
-            exitChannel();
-
             EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
             if(listener != null){
                 long time = timeUpdataTimer.timePassed;
                 listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonHangup,timeUpdataTimer.timePassed*1000);
             }
+            exitChannel();
         }else if(view.getId() == R.id.btn_float){
             showFloatWindow();
         }else if(view.getId() == R.id.btn_invite){
@@ -980,6 +997,8 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                     }
                     if(inViteUserMap.size() == 0){
                         timehandler.stopTime();
+                    }else{
+                        sendEmptyMessageDelayed(CALL_TIMER_TIMEOUT, 1000);
                     }
                 }else{
                     long intervalTime;
@@ -989,6 +1008,7 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                     }else{
                         intervalTime = EaseMsgUtils.CALL_INVITE_INTERVAL;
                     }
+                    sendEmptyMessageDelayed(CALL_TIMER_TIMEOUT, 1000);
                     if(timePassed *1000 == intervalTime){
                         timehandler.stopTime();
 
@@ -1002,7 +1022,7 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                         }
                     }
                 }
-                sendEmptyMessageDelayed(CALL_TIMER_TIMEOUT, 1000);
+
 
             }else if(msg.what == CALL_TIMER_CALL_TIME){
                 timePassed++;
@@ -1052,99 +1072,103 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
      */
     private void sendInviteeMsg(ArrayList<String> userArray, EaseCallType callType){
         EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
+        //开始定时器
+        isInComingCall = false;
+        timehandler.startTime(CALL_TIMER_TIMEOUT);
         for(String username:userArray){
-
-            //放入超时时间
-            long totalMilliSeconds = System.currentTimeMillis();
-            long intervalTime;
-            EaseCallKitConfig callKitConfig = EaseCallKit.getInstance().getCallKitConfig();
-            if(callKitConfig != null){
-                intervalTime = callKitConfig.getCallTimeOut();
-            }else{
-                intervalTime = EaseMsgUtils.CALL_INVITE_INTERVAL;
-            }
-            totalMilliSeconds  +=  intervalTime;
-
-            //放进userMap里面
-            inViteUserMap.put(username,totalMilliSeconds);
-
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    //显示占位符
-                    final EaseCallMemberView memberView = new EaseCallMemberView(getApplicationContext());
-                    UserInfo userInfo = new UserInfo();
-                    userInfo.userAccount = username;
-                    memberView.setUserInfo(userInfo);
-                    memberView.setLoading(true);
-                    callConferenceViewGroup.addView(memberView);
-                    placeholderList.put(username, memberView);
+            if(!placeholderList.containsKey(username) &&  !userAccountList.containsKey(username)) {
+                //放入超时时间
+                long totalMilliSeconds = System.currentTimeMillis();
+                long intervalTime;
+                EaseCallKitConfig callKitConfig = EaseCallKit.getInstance().getCallKitConfig();
+                if (callKitConfig != null) {
+                    intervalTime = callKitConfig.getCallTimeOut();
+                } else {
+                    intervalTime = EaseMsgUtils.CALL_INVITE_INTERVAL;
                 }
-            });
+                totalMilliSeconds += intervalTime;
 
-            final EMMessage message = EMMessage.createTxtSendMessage( "邀请您进行多人音视频通话", username);
-            message.setAttribute(EaseMsgUtils.CALL_ACTION, EaseCallAction.CALL_INVITE.state);
-            message.setAttribute(EaseMsgUtils.CALL_CHANNELNAME, channelName);
-            message.setAttribute(EaseMsgUtils.CALL_TYPE,callType.code);
-            message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, EaseCallKit.deviceId);
-            JSONObject object = EaseCallKit.getInstance().getInviteExt();
-            if(object != null){
-                message.setAttribute(CALL_INVITE_EXT, object);
-            }else{
+                //放进userMap里面
+                inViteUserMap.put(username, totalMilliSeconds);
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        //显示占位符
+                        final EaseCallMemberView memberView = new EaseCallMemberView(getApplicationContext());
+                        UserInfo userInfo = new UserInfo();
+                        userInfo.userAccount = username;
+                        memberView.setUserInfo(userInfo);
+                        memberView.setLoading(true);
+                        callConferenceViewGroup.addView(memberView);
+                        placeholderList.put(username, memberView);
+                    }
+                });
+
+                final EMMessage message = EMMessage.createTxtSendMessage("邀请您进行多人音视频通话", username);
+                message.setAttribute(EaseMsgUtils.CALL_ACTION, EaseCallAction.CALL_INVITE.state);
+                message.setAttribute(EaseMsgUtils.CALL_CHANNELNAME, channelName);
+                message.setAttribute(EaseMsgUtils.CALL_TYPE, callType.code);
+                message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, EaseCallKit.deviceId);
+                JSONObject object = EaseCallKit.getInstance().getInviteExt();
+                if (object != null) {
+                    message.setAttribute(CALL_INVITE_EXT, object);
+                } else {
+                    try {
+                        JSONObject obj = new JSONObject();
+                        message.setAttribute(CALL_INVITE_EXT, obj);
+                    } catch (Exception e) {
+                        e.getStackTrace();
+                    }
+                }
+                if (EaseCallKit.getInstance().getCallID() == null) {
+                    EaseCallKit.getInstance().setCallID(EaseCallKitUtils.getRandomString(10));
+                }
+                message.setAttribute(EaseMsgUtils.CLL_ID, EaseCallKit.getInstance().getCallID());
+
+                message.setAttribute(EaseMsgUtils.CLL_TIMESTRAMEP, System.currentTimeMillis());
+                message.setAttribute(EaseMsgUtils.CALL_MSG_TYPE, EaseMsgUtils.CALL_MSG_INFO);
+
+                //增加推送字段
+                JSONObject extObject = new JSONObject();
                 try {
-                    JSONObject obj = new JSONObject();
-                    message.setAttribute(CALL_INVITE_EXT, obj);
-                }catch (Exception e){
-                    e.getStackTrace();
+                    String info = getApplication().getString(R.string.alert_request_multiple_video, EMClient.getInstance().getCurrentUser());
+                    extObject.putOpt("em_push_title", info);
+                    extObject.putOpt("em_push_content", info);
+                    extObject.putOpt("isRtcCall", true);
+                    extObject.putOpt("callType", EaseCallType.CONFERENCE_CALL.code);
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
-            }
-            if(EaseCallKit.getInstance().getCallID() == null){
-                EaseCallKit.getInstance().setCallID(EaseCallKitUtils.getRandomString(10));
-            }
-            message.setAttribute(EaseMsgUtils.CLL_ID, EaseCallKit.getInstance().getCallID());
+                message.setAttribute("em_apns_ext", extObject);
 
-            message.setAttribute(EaseMsgUtils.CLL_TIMESTRAMEP, System.currentTimeMillis());
-            message.setAttribute(EaseMsgUtils.CALL_MSG_TYPE, EaseMsgUtils.CALL_MSG_INFO);
-
-            //增加推送字段
-            JSONObject extObject = new JSONObject();
-            try {
-                String info = getApplication().getString(R.string.alert_request_multiple_video, EMClient.getInstance().getCurrentUser());
-                extObject.putOpt("em_push_title",info);
-                extObject.putOpt("em_push_content",info);
-                extObject.putOpt("isRtcCall",true);
-                extObject.putOpt("callType",EaseCallType.CONFERENCE_CALL.code);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            message.setAttribute("em_apns_ext", extObject);
-
-            final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
-            message.setMessageStatusCallback(new EMCallBack() {
-                @Override
-                public void onSuccess() {
-                    EMLog.d(TAG, "Invite call success username:" + username);
-                    if(listener != null){
-                        listener.onInViteCallMessageSent();
+                final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
+                message.setMessageStatusCallback(new EMCallBack() {
+                    @Override
+                    public void onSuccess() {
+                        EMLog.d(TAG, "Invite call success username:" + username);
+                        if (listener != null) {
+                            listener.onInViteCallMessageSent();
+                        }
                     }
-                }
 
-                @Override
-                public void onError(int code, String error) {
-                    EMLog.e(TAG, "Invite call error " + code + ", " + error + " username:" + username);
-                    
-                    if(listener != null){
-                        listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
-                        listener.onInViteCallMessageSent();
+                    @Override
+                    public void onError(int code, String error) {
+                        EMLog.e(TAG, "Invite call error " + code + ", " + error + " username:" + username);
+
+                        if (listener != null) {
+                            listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR, code, error);
+                            listener.onInViteCallMessageSent();
+                        }
                     }
-                }
 
-                @Override
-                public void onProgress(int progress, String status) {
+                    @Override
+                    public void onProgress(int progress, String status) {
 
-                }
-            });
-            EMClient.getInstance().chatManager().sendMessage(message);
+                    }
+                });
+                EMClient.getInstance().chatManager().sendMessage(message);
+            }
         }
 
         //初始化邀请列表
@@ -1294,6 +1318,15 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
                         }
                     }
                 }
+                if(EaseCallFloatWindow.getInstance(getApplicationContext()).isShowing()){
+                    EaseCallFloatWindow.getInstance(getApplicationContext()).dismiss();
+                }
+
+                //重置状态
+                EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDLE);
+                EaseCallKit.getInstance().setCallID(null);
+                EaseCallKit.getInstance().setMultipleVideoActivity(null);
+
                 finish();
             }
         });
@@ -1353,28 +1386,31 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
 
     @Override
     protected void onNewIntent(Intent intent) {
+        EMLog.d(TAG,"TEST onNewIntent");
         super.onNewIntent(intent);
         ArrayList<String> users = EaseCallKit.getInstance().getInviteeUsers();
         if(users != null && users.size()> 0){
             handler.sendEmptyMessage(EaseMsgUtils.MSG_MAKE_CONFERENCE_VIDEO);
         }
-        boolean isFloatWindow = intent.getBooleanExtra("isFloatWindow", false);
-        if(isFloatWindow) {
-            int uId = intent.getIntExtra("uId", 0);
-            EaseCallMemberView memberView = mUidsList.get(uId);
-            if(memberView != null){
-                SurfaceView surfaceView = RtcEngine.CreateRendererView(getApplicationContext());
-                memberView.addSurfaceView(surfaceView);
-                surfaceView.setZOrderOnTop(false);
-                surfaceView.setZOrderMediaOverlay(false);
-                if(uId == 0){
-                    mRtcEngine.setupLocalVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_HIDDEN, uId));
-                }else{
-                    mRtcEngine.setupRemoteVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_HIDDEN, uId));
+
+        if(EaseCallFloatWindow.getInstance(getApplicationContext()).isShowing()){
+            int uId = EaseCallFloatWindow.getInstance(getApplicationContext()).getUid();
+            if(uId != -1){
+                EaseCallMemberView memberView = mUidsList.get(uId);
+                if(memberView != null){
+                    SurfaceView surfaceView = RtcEngine.CreateRendererView(getApplicationContext());
+                    memberView.addSurfaceView(surfaceView);
+                    surfaceView.setZOrderOnTop(false);
+                    surfaceView.setZOrderMediaOverlay(false);
+                    if(uId == 0){
+                        mRtcEngine.setupLocalVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_HIDDEN, uId));
+                    }else{
+                        mRtcEngine.setupRemoteVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_HIDDEN, uId));
+                    }
                 }
+                // 防止activity在后台被start至前台导致window还存在
+                EaseCallFloatWindow.getInstance(getApplicationContext()).dismiss();
             }
-            // 防止activity在后台被start至前台导致window还存在
-            EaseCallFloatWindow.getInstance(getApplicationContext()).dismiss();
         }
     }
 
@@ -1403,6 +1439,8 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
         handler.sendEmptyMessage(EaseMsgUtils.MSG_RELEASE_HANDLER);
     }
 
+    
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -1419,12 +1457,69 @@ public class EaseMultipleVideoActivity extends AppCompatActivity implements View
         if(userInfoList != null){
             userInfoList.clear();
         }
+        if(userAccountList != null){
+            userAccountList.clear();
+        }
         leaveChannel();
         RtcEngine.destroy();
+    }
 
-        //重置状态
-        EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDEL);
-        EaseCallKit.getInstance().setCallID(null);
-        EaseCallKit.getInstance().setMultipleVideoActivity(null);
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // 是否触发按键为back键
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            onBackPressed();
+            return true;
+        }else{
+            // 如果不是back键正常响应
+            return super.onKeyDown(keyCode, event);
+        }
+    }
+
+    @Override
+    protected void onUserLeaveHint() {
+        Log.d(TAG,"onUserLeaveHint");
+        super.onUserLeaveHint();
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        exitChannelDisplay();
+    }
+
+
+    /**
+     * 是否退出当前通话提示框
+     */
+    public void exitChannelDisplay() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(EaseMultipleVideoActivity.this);
+        final AlertDialog dialog = builder.create();
+        View dialogView = View.inflate(EaseMultipleVideoActivity.this, R.layout.activity_exit_channel, null);
+        dialog.setView(dialogView);
+
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        WindowManager.LayoutParams wmlp = dialog.getWindow().getAttributes();
+        wmlp.gravity = Gravity.CENTER | Gravity.CENTER;
+        dialog.show();
+
+        final Button btn_ok = dialogView.findViewById(R.id.btn_ok);
+        final Button btn_cancel = dialogView.findViewById(R.id.btn_cancel);
+        btn_ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+                EMLog.e(TAG, "exitChannelDisplay  exit channel:");
+                exitChannel();
+            }
+        });
+
+        btn_cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+                EMLog.e(TAG, "exitChannelDisplay not exit channel");
+            }
+        });
     }
 };

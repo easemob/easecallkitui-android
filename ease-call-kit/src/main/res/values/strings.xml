@@ -12,6 +12,7 @@
     <string name="The_other_is_busy">对方正在忙碌中</string>
     <string name="The_coming_call">收到来电</string>
     <string name="alert_window_permission_denied">当前App未被授予悬浮窗权限 :(</string>
+    <string name="The_Conference_call_currently_in_progress">当前正在音视频通话中,请稍后重试...</string>
     <string name="title_activity_ease_multiple_video">EaseMultipleVideoActivity</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
