@@ -35,7 +35,8 @@ android {
 
 dependencies {
     //implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.hyphenate:hyphenate-chat:3.8.0'
+    //api project(':hyphenatechatsdk')
+    implementation 'io.hyphenate:hyphenate-chat:3.8.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
     implementation 'com.google.android.material:material:1.2.1'
@@ -45,6 +46,7 @@ dependencies {
     implementation 'io.agora.rtc:full-sdk:3.2.1'
 }
 
-
 //apply from: "../upload_aar.gradle"
 //apply from: 'https://raw.githubusercontent.com/blundell/release-android-library/master/android-release-aar.gradle'
+
+//apply from: "../maven-push-release.gradle"
