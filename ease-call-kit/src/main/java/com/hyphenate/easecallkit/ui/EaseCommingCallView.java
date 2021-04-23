@@ -14,6 +14,11 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.FutureTarget;
+import com.hyphenate.easecallkit.EaseCallKit;
+import com.hyphenate.easecallkit.base.EaseCallUserInfo;
+import com.hyphenate.easecallkit.livedatas.EaseLiveDataBus;
 import com.hyphenate.util.EMLog;
 
 import java.io.IOException;
@@ -103,19 +108,17 @@ public class EaseCommingCallView extends FrameLayout {
                     @Override
                     protected Bitmap doInBackground(String... params) {
                         Bitmap bitmap = null;
+                        FutureTarget<Bitmap> futureTarget =
+                                Glide.with(getContext())
+                                        .asBitmap()
+                                        .load(headUrl)
+                                        .submit(500, 500);
                         try {
-                            String url = params[0];
-                            URL HttpURL = new URL(url);
-                            HttpURLConnection conn = (HttpURLConnection) HttpURL.openConnection();
-                            conn.setDoInput(true);
-                            conn.connect();
-                            InputStream is = conn.getInputStream();
-                            bitmap = BitmapFactory.decodeStream(is);
-                            is.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                            bitmap = futureTarget.get();
+                        }catch (Exception e){
+                            e.getStackTrace();
                         }
-                        return bitmap;
+                        return  bitmap;
                     }
 
                     //在doInBackground 执行完成后，onPostExecute 方法将被UI 线程调用，

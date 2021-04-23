@@ -37,6 +37,8 @@ import static android.content.Context.MODE_PRIVATE;
  */
 public class EaseCallKitUtils {
     public final static String TAG = "EaseCallKitUtils";
+    public final static String UPDATE_USERINFO = "updateUserInfo";
+    public final static String UPDATE_CALLINFO = "updateCallInfo";
 
     /**
      * length用户要求产生字符串的长度，随机生成会议密码
