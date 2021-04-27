@@ -85,4 +85,11 @@ public class EaseCallKitConfig {
     public void setEnableRTCToken(boolean enableRTCToken) {
         this.enableRTCToken = enableRTCToken;
     }
+
+    public void setUserInfo(String userName, EaseCallUserInfo userInfo){
+        if(userInfoMap == null){
+            userInfoMap = new HashMap<>();
+        }
+        userInfoMap.put(userName,userInfo);
+    }
 }

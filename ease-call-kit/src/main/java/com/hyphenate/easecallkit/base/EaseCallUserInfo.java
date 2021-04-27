@@ -8,11 +8,16 @@ package com.hyphenate.easecallkit.base;
 public class EaseCallUserInfo {
     private String nickName;
     private String headImage;
+    private String userId;
 
     public  EaseCallUserInfo(String nickName,String headImage){
         this.nickName = nickName;
         this.headImage = headImage;
     }
+
+    public  EaseCallUserInfo(){
+    }
+
 
     public String getNickName() {
         return nickName;
@@ -29,4 +34,8 @@ public class EaseCallUserInfo {
     public void setHeadImage(String headImage) {
         this.headImage = headImage;
     }
+
+    public String getUserId() { return userId; }
+
+    public void setUserId(String userId) { this.userId = userId; }
 }
