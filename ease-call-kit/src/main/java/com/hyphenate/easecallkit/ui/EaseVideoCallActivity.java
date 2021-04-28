@@ -9,6 +9,9 @@ import com.hyphenate.easecallkit.R;
 import com.hyphenate.easecallkit.base.EaseCallFloatWindow;
 import com.hyphenate.easecallkit.base.EaseCallKitConfig;
 import com.hyphenate.easecallkit.base.EaseCallKitTokenCallback;
+import com.hyphenate.easecallkit.base.EaseCallUserInfo;
+import com.hyphenate.easecallkit.base.EaseGetUserAccountCallback;
+import com.hyphenate.easecallkit.base.EaseUserAccount;
 import com.hyphenate.easecallkit.event.*;
 import com.hyphenate.easecallkit.event.BaseEvent;
 import com.hyphenate.easecallkit.livedatas.EaseLiveDataBus;
@@ -68,6 +71,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 import com.hyphenate.easecallkit.utils.EaseCallState;
@@ -82,6 +88,8 @@ import io.agora.rtc.video.VideoCanvas;
 import io.agora.rtc.video.VideoEncoderConfiguration;
 
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
+import static io.agora.rtc.Constants.CHANNEL_PROFILE_LIVE_BROADCASTING;
+import static io.agora.rtc.Constants.CLIENT_ROLE_BROADCASTER;
 import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED;
 import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_STOPPED;
 
@@ -175,12 +183,15 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
     //用于防止多次打开请求悬浮框页面
     private boolean requestOverlayPermission;
 
+    //加入频道Uid Map
+    private Map<Integer, EaseUserAccount> uIdMap = new HashMap<>();
+    EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
+
     private final IRtcEngineEventHandler mRtcEventHandler = new IRtcEngineEventHandler() {
         @Override
         public void onError(int err) {
             super.onError(err);
             EMLog.d(TAG,"IRtcEngineEventHandler onError:" + err);
-            EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
             if(listener != null){
                 listener.onCallError(EaseCallKit.EaseCallError.RTC_ERROR,err,"rtc error");
             }
@@ -210,8 +221,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                     }
                 }
             });
-
-
         }
 
         @Override
@@ -248,6 +257,15 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 public void run() {
                     //检测到对方进来
                     makeOngoingStatus();
+
+                    String userName = null;
+                    if(uIdMap != null){
+                        EaseUserAccount account = uIdMap.get(uid);
+                        if(account != null){
+                            userName = uIdMap.get(uid).getUserName();
+                        }
+                    }
+                    setUserJoinChannelInfo(null,uid);
                 }
             });
         }
@@ -259,8 +277,9 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 public void run() {
                     //检测到对方退出 自己退出
                     exitChannel();
-
-                    EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
+                    if(uIdMap != null){
+                        uIdMap.remove(uid);
+                    }
                     if(listener != null){
                         //对方挂断
                         long time = getChronometerSeconds(chronometer);
@@ -352,7 +371,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         }
 
         timehandler = new TimeHandler();
-        //EMLog.e(TAG,"token:" + EMClient.getInstance().getAccessToken());
     }
 
     private void initParams(Bundle bundle){
@@ -601,6 +619,10 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 agoraAppId = config.getAgoraAppId();
             }
             mRtcEngine = RtcEngine.create(getBaseContext(), agoraAppId, mRtcEventHandler);
+            //因为有小程序 设置为直播模式 角色设置为主播
+            mRtcEngine.setChannelProfile(CHANNEL_PROFILE_LIVE_BROADCASTING);
+            mRtcEngine.setClientRole(CLIENT_ROLE_BROADCASTER);
+
             EaseCallFloatWindow.getInstance(getApplicationContext()).setRtcEngine(mRtcEngine);
         } catch (Exception e) {
             EMLog.e(TAG, Log.getStackTraceString(e));
@@ -650,31 +672,28 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
      * 加入频道
      */
     private void joinChannel() {
-        EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
         EaseCallKitConfig callKitConfig = EaseCallKit.getInstance().getCallKitConfig();
         if(listener != null && callKitConfig != null && callKitConfig.isEnableRTCToken()){
             listener.onGenerateToken(EMClient.getInstance().getCurrentUser(),channelName,  EMClient.getInstance().getOptions().getAppKey(), new EaseCallKitTokenCallback(){
                 @Override
-                public void onSetToken(String token) {
-                    //获取到Token加入频道
-                    if(token == null || token.length() == 0){
-                        mRtcEngine.joinChannelWithUserAccount(null, channelName, EMClient.getInstance().getCurrentUser());
-                    }else{
-                        mRtcEngine.joinChannelWithUserAccount(token, channelName, EMClient.getInstance().getCurrentUser());
-                    }
+                public void onSetToken(String token,int uId) {
+                    EMLog.d(TAG,"onSetToken token:" + token + " uid: " +uId);
+                    //获取到Token uid加入频道
+                    mRtcEngine.joinChannel(token, channelName,null,uId);
+                    //自己信息加入uIdMap
+                    uIdMap.put(uId,new EaseUserAccount(uId,EMClient.getInstance().getCurrentUser()));
                 }
 
                 @Override
                 public void onGetTokenError(int error, String errorMsg) {
-                    EMLog.e(TAG,"onGenerateToken error :" + EMClient.getInstance().getAccessToken());
+                    EMLog.e(TAG,"onGenerateToken error :" + error + " errorMsg:" + errorMsg);
                     //获取Token失败,退出呼叫
                     exitChannel();
                 }
             });
-        }else{
-            mRtcEngine.joinChannelWithUserAccount(null, channelName, EMClient.getInstance().getCurrentUser());
         }
     }
+
 
 
     @Override
@@ -712,8 +731,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 sendCmdMsg(cancelEvent,username);
             }else{
                 exitChannel();
-
-                EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                 if(listener != null){
                     //通话结束原因挂断
                     long time = getChronometerSeconds(chronometer);
@@ -949,8 +966,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                          }
                          //取消通话
                          exitChannel();
-
-                        EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                         if(listener != null){
                             //对方取消
                             listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonRemoteCancel,0);
@@ -977,7 +992,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                                          //退出通话
                                          exitChannel();
 
-                                         EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                                          if(listener != null){
                                              //对方正在忙碌中
                                              listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonBusy,0); }
@@ -1063,7 +1077,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                                      //退出通话
                                      exitChannel();
 
-                                     EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                                      if(listener != null){
                                          //已经在其他设备处理
                                          listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonHandleOnOtherDevice,0);
@@ -1073,6 +1086,16 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                          }
 
                          break;
+                }
+            }
+        });
+
+        EaseLiveDataBus.get().with(EaseCallKitUtils.UPDATE_USERINFO, EaseCallUserInfo.class).observe(this, userInfo -> {
+            if (userInfo != null) {
+                if(userInfo.getUserId().equals(username)){
+                    //更新本地头像昵称
+                    EaseCallKit.getInstance().getCallKitConfig().setUserInfo(username,userInfo);
+                    updateUserInfo();
                 }
             }
         });
@@ -1112,9 +1135,11 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
      * @param callType
      */
     private void sendInviteeMsg(String username, EaseCallType callType){
+        //更新昵称 头像
+        setUserJoinChannelInfo(username,0);
+
         mConfirm_ring = false;
         final EMMessage message;
-        EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
         if(callType == EaseCallType.SINGLE_VIDEO_CALL){
             message = EMMessage.createTxtSendMessage( "邀请您进行视频通话", username);
         }else{
@@ -1177,7 +1202,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             @Override
             public void onError(int code, String error) {
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
-                EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                 if(listener != null){
                     listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
                     listener.onInViteCallMessageSent();
@@ -1242,8 +1266,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-
-                                EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                                 if(listener != null){
                                     //取消通话
                                     listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonCancel,0);
@@ -1254,8 +1276,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-
-                                EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                                 if(listener != null){
                                     //对方无响应
                                     listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonRemoteNoResponse,0);
@@ -1275,7 +1295,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                                     if(listener != null){
                                         listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonRefuse,0);
                                     }
@@ -1295,7 +1314,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 if(conversation != null){
                     conversation.removeMessage(message.getMsgId());
                 }
-                EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                 if(listener != null){
                     listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
                 }
@@ -1365,8 +1383,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                     }else{
                         //被叫等待仲裁消息超时
                         exitChannel();
-
-                        EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                         if(listener != null){
                             //对方接通超时
                             listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonRemoteNoResponse,0);
@@ -1465,6 +1481,51 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             }
         }
     }
+
+    /**
+     * 设置用户信息回调
+     * @param userName
+     * @param uId
+     */
+    private void setUserJoinChannelInfo(String userName,int uId){
+        if (listener != null) {
+            listener.onRemoteUserJoinChannel(channelName, userName, uId, new EaseGetUserAccountCallback() {
+                @Override
+                public void onUserAccount(List<EaseUserAccount> userAccounts) {
+                    if (userAccounts != null && userAccounts.size() > 0) {
+                        for (EaseUserAccount account : userAccounts) {
+                            uIdMap.put(account.getUid(), account);
+                        }
+                    }
+                    updateUserInfo();
+                }
+
+                @Override
+                public void onSetUserAccountError(int error, String errorMsg) {
+                    EMLog.e(TAG,"onRemoteUserJoinChannel error:" + error + "  errorMsg:" + errorMsg);
+                }
+            });
+        }
+    }
+
+    /**
+     * 更新本地头像昵称
+     */
+    private void updateUserInfo(){
+        //更新本地头像昵称
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                //头像
+                headUrl = EaseCallKitUtils.getUserHeadImage(username);
+                loadHeadImage();
+                //昵称
+                tv_nick_voice.setText(EaseCallKitUtils.getUserNickName(username));
+            }
+        });
+    }
+
+
 
     private void playRing(){
       if(ringFile != null){
@@ -1685,6 +1746,9 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         if(headBitMap != null){
             headBitMap.recycle();
         }
+        if(uIdMap != null){
+            uIdMap.clear();
+        }
     }
 
     @Override
@@ -1732,7 +1796,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                     sendCmdMsg(cancelEvent,username);
                 }else{
                     exitChannel();
-                    EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
                     if(listener != null){
                         //通话结束原因挂断
                         long time = getChronometerSeconds(chronometer);

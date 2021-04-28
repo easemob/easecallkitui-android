@@ -63,4 +63,10 @@ public interface EaseCallKitListener{
      *
      */
     void onInViteCallMessageSent();
+
+
+    /**
+     *远端用户加入频道回调
+     */
+    void onRemoteUserJoinChannel(String channelName, String userName, int uid, EaseGetUserAccountCallback callback);
 }

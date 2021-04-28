@@ -14,6 +14,8 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.FutureTarget;
 import com.hyphenate.easecallkit.R;
 import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
 import io.agora.rtc.models.UserInfo;
@@ -77,7 +79,6 @@ public class EaseCallMemberView extends RelativeLayout {
         audioOffView = (ImageView) findViewById(R.id.icon_mute);
         talkingView = (ImageView) findViewById(R.id.icon_talking);
         nameView = (TextView) findViewById(R.id.text_name);
-       // animator = new ValueAnimator();
         loading_dialog = findViewById(R.id.member_loading);
     }
 
@@ -102,11 +103,26 @@ public class EaseCallMemberView extends RelativeLayout {
             if(headUrl != null){
                 loadHeadImage();
             }else{
-                avatarView.setBackgroundResource(R.drawable.call_memberview_background);
+                avatarView.setImageResource(R.drawable.call_memberview_background);
             }
         }
     }
 
+    public void updateUserInfo(){
+        if(userInfo != null){
+            nameView.setText(EaseCallKitUtils.getUserNickName(userInfo.userAccount));
+            headUrl = EaseCallKitUtils.getUserHeadImage(userInfo.userAccount);
+            if(headUrl != null){
+                loadHeadImage();
+            }else{
+                avatarView.setImageResource(R.drawable.call_memberview_background);
+            }
+        }
+    }
+
+    public UserInfo getUserInfo(){
+        return  userInfo;
+    }
     public String getUserAccount(){
         if(userInfo != null){
             return userInfo.userAccount;
@@ -160,46 +176,32 @@ public class EaseCallMemberView extends RelativeLayout {
               audioOffView.setVisibility(VISIBLE);
               if(value == 1){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_01);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_01));
               }else if(value == 2){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_02);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_02));
               }else if(value == 3){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_03);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_03));
               }else if(value ==4){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_04);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_04));
               }else if(value ==5){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_05);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_05));
               }else if(value ==6){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_06);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_06));
               }else if(value ==7){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_07);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_07));
               }else if(value ==8){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_08);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_08));
               }else if(value ==9){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_09);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_09));
               }else if(value ==10){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_10);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_10));
               }else if(value ==11){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_11);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_11));
               }else if(value ==12){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_12);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_12));
               }else if(value ==13){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_13);
-                  //audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_13));
               }else if(value == 14){
                   audioOffView.setImageResource(R.drawable.ease_mic_level_14);
-//                  audioOffView.setImageBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.ease_mic_level_14));
               }
         }else{
             audioOffView.setVisibility(GONE);
@@ -245,7 +247,7 @@ public class EaseCallMemberView extends RelativeLayout {
         if(headUrl != null){
             avatarView.setImageResource(R.drawable.call_memberview_background);
         }else{
-            avatarView.setImageResource(R.drawable.call_memberview_background);
+            loadHeadImage();
         }
         nameView.setText(EaseCallKitUtils.getUserNickName(username));
     }
@@ -289,19 +291,17 @@ public class EaseCallMemberView extends RelativeLayout {
                     @Override
                     protected Bitmap doInBackground(String... params) {
                         Bitmap bitmap = null;
+                        FutureTarget<Bitmap> futureTarget =
+                                Glide.with(getContext())
+                                        .asBitmap()
+                                        .load(headUrl)
+                                        .submit(200, 200);
                         try {
-                            String url = params[0];
-                            URL HttpURL = new URL(url);
-                            HttpURLConnection conn = (HttpURLConnection) HttpURL.openConnection();
-                            conn.setDoInput(true);
-                            conn.connect();
-                            InputStream is = conn.getInputStream();
-                            bitmap = BitmapFactory.decodeStream(is);
-                            is.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                            bitmap = futureTarget.get();
+                        }catch (Exception e){
+                            e.getStackTrace();
                         }
-                        return bitmap;
+                        return  bitmap;
                     }
 
                     //在doInBackground 执行完成后，onPostExecute 方法将被UI 线程调用，
@@ -310,7 +310,7 @@ public class EaseCallMemberView extends RelativeLayout {
                     protected void onPostExecute(Bitmap bitmap) {
                         if (bitmap != null) {
                             avatarView.setImageBitmap(bitmap);
-                            avatarView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+                            avatarView.setScaleType(ImageView.ScaleType.CENTER);
                         }
                     }
                 }.execute(headUrl);

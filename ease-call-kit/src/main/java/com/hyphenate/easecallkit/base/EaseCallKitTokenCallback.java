@@ -12,7 +12,7 @@ public interface EaseCallKitTokenCallback {
      *
      * @param token  token的值
      */
-    void onSetToken(String token);
+    void onSetToken(String token,int uId);
 
     /**
      * \~chinese
