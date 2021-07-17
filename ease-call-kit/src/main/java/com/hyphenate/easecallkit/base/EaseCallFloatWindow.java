@@ -1,18 +1,18 @@
 package com.hyphenate.easecallkit.base;
 
 import android.animation.ValueAnimator;
-import android.app.ActivityManager;
-import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -20,14 +20,17 @@ import android.widget.RelativeLayout;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.easecallkit.EaseCallKit;
 import com.hyphenate.easecallkit.R;
-import com.hyphenate.easecallkit.ui.EaseMultipleVideoActivity;
-import com.hyphenate.easecallkit.ui.EaseVideoCallActivity;
+import com.hyphenate.easecallkit.ui.EaseBaseCallActivity;
 import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
 import io.agora.rtc.RtcEngine;
+import io.agora.rtc.models.UserInfo;
 import io.agora.rtc.video.VideoCanvas;
+
+import com.hyphenate.easecallkit.widget.MyChronometer;
 import com.hyphenate.util.EMLog;
 
-import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Map;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
@@ -57,19 +60,32 @@ public class EaseCallFloatWindow {
     private EaseCallMemberView memberView;
     private RtcEngine rtcEngine;
     private int uId;
+    private long costSeconds;
+    private ConferenceInfo conferenceInfo;
+    private SingleCallInfo singleCallInfo;
 
     public EaseCallFloatWindow(Context context) {
-        this.context = context;
-        windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        Point point = new Point();
-        windowManager.getDefaultDisplay().getSize(point);
-        screenWidth = point.x;
+        initFloatWindow(context);
+    }
+
+    private EaseCallFloatWindow() {
     }
 
 
     public static EaseCallFloatWindow getInstance(Context context) {
         if (instance == null) {
             instance = new EaseCallFloatWindow(context);
+        }
+        return instance;
+    }
+
+    public static EaseCallFloatWindow getInstance() {
+        if(instance == null) {
+            synchronized (EaseCallFloatWindow.class) {
+                if(instance == null) {
+                    instance = new EaseCallFloatWindow();
+                }
+            }
         }
         return instance;
     }
@@ -86,8 +102,27 @@ public class EaseCallFloatWindow {
         this.rtcEngine = rtcEngine;
     }
 
+    public void setRtcEngine(Context context, RtcEngine rtcEngine){
+        this.rtcEngine = rtcEngine;
+        initFloatWindow(context);
+    }
+
+    private void initFloatWindow(Context context) {
+        this.context = context;
+        windowManager = (WindowManager) context.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        Point point = new Point();
+        windowManager.getDefaultDisplay().getSize(point);
+        screenWidth = point.x;
+    }
+
     public EaseCallType getCallType() {
         return  callType;
+    }
+
+    private MyChronometer chronometer;
+
+    public void setCostSeconds(long seconds) {
+        this.costSeconds = seconds;
     }
 
     /**
@@ -108,7 +143,19 @@ public class EaseCallFloatWindow {
         floatView = LayoutInflater.from(context).inflate(R.layout.activity_float_window, null);
         floatView.setFocusableInTouchMode(true);
 
+        if(floatView instanceof ViewGroup) {
+            chronometer = new MyChronometer(context);
+            ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(0, 0);
+            ((ViewGroup)floatView).addView(chronometer, params);
+        }
+
         windowManager.addView(floatView, layoutParams);
+        startCount();
+        if(callType == EaseCallType.CONFERENCE_CALL) {
+            conferenceInfo = new ConferenceInfo();
+        }else {
+            singleCallInfo = new SingleCallInfo();
+        }
         floatView.post(new Runnable() {
             @Override
             public void run() {
@@ -123,16 +170,20 @@ public class EaseCallFloatWindow {
         floatView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent;
-                if(callType == EaseCallType.CONFERENCE_CALL){
-                    intent = new Intent(EaseCallKit.getInstance().getAppContext(), EaseMultipleVideoActivity.class).addFlags(FLAG_ACTIVITY_NEW_TASK);
-                }else{
-                    intent = new Intent(EaseCallKit.getInstance().getAppContext(), EaseVideoCallActivity.class).addFlags(FLAG_ACTIVITY_NEW_TASK);
-                    intent.putExtra("uId", uId);
+                Class<? extends EaseBaseCallActivity> callClass = EaseCallKit.getInstance().getCurrentCallClass();
+                Log.e("TAG", "current call class: "+callClass);
+                if(callClass != null) {
+                    Intent intent = new Intent(context, callClass);
+                    intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+                    if(callType != EaseCallType.CONFERENCE_CALL) {
+                        intent.putExtra("uId", singleCallInfo != null ? singleCallInfo.remoteUid : 0);
+                    }
+                    intent.putExtra("isClickByFloat", true);
+                    EaseCallKit.getInstance().getAppContext().startActivity(intent);
+                }else {
+                   EMLog.e(TAG, "Current call class is null, please not call EaseCallKit.getInstance().releaseCall() before the call is finished");
                 }
-                intent.putExtra("isClickByFloat", true);
-                EaseCallKit.getInstance().getAppContext().startActivity(intent);
-                dismiss();
+                //dismiss();
             }
         });
 
@@ -179,8 +230,58 @@ public class EaseCallFloatWindow {
         });
     }
 
+    private void startCount() {
+        if(chronometer != null) {
+            chronometer.setBase(SystemClock.elapsedRealtime());
+            chronometer.start();
+        }
+    }
 
+    private void stopCount() {
+        if(chronometer != null) {
+            chronometer.stop();
+        }
+    }
 
+    /**
+     * Should call the method before call {@link #dismiss()}
+     * @return Cost seconds in float window
+     */
+    public long getFloatCostSeconds() {
+        if(chronometer != null) {
+            return chronometer.getCostSeconds();
+        }
+        Log.e(TAG, "chronometer is null, can not get cost seconds");
+        return 0;
+    }
+
+    /**
+     * Should call the method before call {@link #dismiss()}
+     * @return Total cost seconds
+     */
+    public long getTotalCostSeconds() {
+        if(chronometer != null) {
+            Log.e("activity", "costSeconds: "+chronometer.getCostSeconds());
+        }
+        if(chronometer != null) {
+            return costSeconds + chronometer.getCostSeconds();
+        }
+        Log.e(TAG, "chronometer is null, can not get total cost seconds");
+        return 0;
+    }
+
+    public void setConferenceInfo(ConferenceInfo info) {
+        this.conferenceInfo = info;
+    }
+
+    public ConferenceInfo getConferenceInfo() {
+        return conferenceInfo;
+    }
+
+    /**
+     * Update conference call state
+     * @param view
+     */
     public void update(EaseCallMemberView view) {
         if (floatView == null) {
             return;
@@ -200,17 +301,40 @@ public class EaseCallFloatWindow {
             prepareSurfaceView(isSelf,uId);
         }
     }
-    
-    public void updateCallWindow(boolean isSelf, int uId,boolean surface) {
-        this.uId = uId;
+
+    /**
+     * Update the sing call state
+     * @param isSelf
+     * @param curUid
+     * @param remoteUid
+     * @param surface
+     */
+    public void update(boolean isSelf, int curUid, int remoteUid, boolean surface) {
+        if(singleCallInfo == null) {
+            singleCallInfo = new SingleCallInfo();
+        }
+        singleCallInfo.curUid = curUid;
+        singleCallInfo.remoteUid = remoteUid;
         if(callType == EaseCallType.SINGLE_VIDEO_CALL && surface){
             floatView.findViewById(R.id.layout_call_voice).setVisibility(View.GONE);
             floatView.findViewById(R.id.layout_call_video).setVisibility(View.VISIBLE);
-            prepareSurfaceView(isSelf,uId);
+            prepareSurfaceView(isSelf, isSelf ? curUid : remoteUid);
         }else{
             floatView.findViewById(R.id.layout_call_voice).setVisibility(View.VISIBLE);
             floatView.findViewById(R.id.layout_call_video).setVisibility(View.GONE);
         }
+    }
+
+    public SingleCallInfo getSingleCallInfo() {
+        return singleCallInfo;
+    }
+
+    public void setCameraDirection(boolean isFront, boolean changeFlag) {
+        if(singleCallInfo == null) {
+            singleCallInfo = new SingleCallInfo();
+        }
+        singleCallInfo.isCameraFront = isFront;
+        singleCallInfo.changeFlag = changeFlag;
     }
 
     public boolean isShowing() {
@@ -221,9 +345,15 @@ public class EaseCallFloatWindow {
         }
     }
 
+    /**
+     * For the single call, only the remote uid is returned
+     * @return
+     */
     public int getUid() {
         if(callType == EaseCallType.CONFERENCE_CALL && memberView != null) {
             return memberView.getUserId();
+        }else if((callType == EaseCallType.SINGLE_VIDEO_CALL || callType == EaseCallType.SINGLE_VOICE_CALL) && singleCallInfo != null) {
+            return singleCallInfo.remoteUid;
         }
         return -1;
     }
@@ -234,8 +364,17 @@ public class EaseCallFloatWindow {
     public void dismiss() {
         Log.i(TAG, "dismiss: ");
         if (windowManager != null && floatView != null) {
+            stopCount();
             windowManager.removeView(floatView);
-            floatView = null;
+        }
+        floatView = null;
+        memberView = null;
+        surfaceView = null;
+        if(conferenceInfo != null) {
+            conferenceInfo = null;
+        }
+        if(singleCallInfo != null) {
+            singleCallInfo = null;
         }
     }
 
@@ -287,5 +426,49 @@ public class EaseCallFloatWindow {
                     }
                 });
         animator.start();
+    }
+    
+    public static class SingleCallInfo {
+        /**
+         * Current user's uid
+         */
+        public int curUid;
+        /**
+         * The other size of uid
+         */
+        public int remoteUid;
+        /**
+         * Camera direction: front or back
+         */
+        public boolean isCameraFront = true;
+        /**
+         * A tag used to mark the switch between local and remote video
+         */
+        public boolean changeFlag;
+    }
+
+    /**
+     * Use to hold the conference info
+     */
+    public static class ConferenceInfo {
+        public Map<Integer, ViewState> uidToViewList;
+        public Map<String, Integer> userAccountToUidMap;
+        public Map<Integer, EaseUserAccount> uidToUserAccountMap;
+
+        /**
+         * Hold the states of {@link EaseCallMemberView}
+         */
+        public static class ViewState {
+            // video state
+            public boolean isVideoOff;
+            // audio state
+            public boolean isAudioOff;
+            // screen mode
+            public boolean isFullScreenMode;
+            // speak activate state
+            public boolean speakActivated;
+            // camera direction
+            public boolean isCameraFront;
+        }
     }
 }
