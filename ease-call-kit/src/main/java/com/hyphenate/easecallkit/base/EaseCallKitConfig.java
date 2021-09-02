@@ -22,7 +22,7 @@ public class EaseCallKitConfig {
     private String defaultHeadImage;
     private Map<String,EaseCallUserInfo> userInfoMap = new HashMap<>();
     private String RingFile;
-    private String agoraAppId = "15cb0d28b87b425ea613fc46f7c9f974";
+    private String agoraAppId;
     private long callTimeOut = 30 * 1000;
     private boolean enableRTCToken = false;
 

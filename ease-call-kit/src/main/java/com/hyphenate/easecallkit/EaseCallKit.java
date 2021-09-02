@@ -126,6 +126,7 @@ public class EaseCallKit {
 
         //设置callkit配置项
         callKitConfig = new EaseCallKitConfig();
+        callKitConfig.setAgoraAppId(config.getAgoraAppId());
         callKitConfig.setUserInfoMap(config.getUserInfoMap());
         callKitConfig.setDefaultHeadImage(config.getDefaultHeadImage());
         callKitConfig.setCallTimeOut(config.getCallTimeOut());
