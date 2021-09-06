@@ -914,15 +914,18 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 //更新本地头像昵称
                 EaseCallKit.getInstance().getCallKitConfig().setUserInfo(userInfo.getUserId(),userInfo);
                 if(userInfo.getUserId() != null){
-                    updateUserInfo(userAccountList.get(userInfo.getUserId()));
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if(username.equals(userInfo.getUserId()) && incomingCallView != null){
-                                incomingCallView.setInviteInfo(username);
+                    if(userAccountList.containsKey(userInfo.getUserId())) {
+                        int uid = userAccountList.get(userInfo.getUserId());
+                        updateUserInfo(uid);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if(username.equals(userInfo.getUserId()) && incomingCallView != null){
+                                    incomingCallView.setInviteInfo(username);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             }
         });
