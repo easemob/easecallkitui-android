@@ -62,7 +62,7 @@ public class EaseCallKitNotifier {
         }
 
         packageName = appContext.getApplicationInfo().packageName;
-        if (Locale.getDefault().getLanguage().equals("zh")) {
+        if ("zh".equals(Locale.getDefault().getLanguage())) {
             msg = MSG_CH;
         } else {
             msg = MSG_ENG;

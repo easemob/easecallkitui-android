@@ -19,6 +19,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -782,9 +783,8 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                         //判断会话是否有效
                         ConfirmRingEvent ringEvent = new ConfirmRingEvent();
                         String user = alertEvent.userId;
-                        if(alertEvent.callId.equals
-                                (EaseCallKit.getInstance().getCallID())
-                                && inViteUserMap.containsKey(user)){
+                        if(TextUtils.equals(alertEvent.callId, EaseCallKit.getInstance().getCallID())
+                                && inViteUserMap.containsKey(user)) {
                             //发送会话有效消息
                             ringEvent.calleeDevId = alertEvent.calleeDevId;
                             ringEvent.valid = true;
@@ -817,8 +817,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                         String userId = answerEvent.userId;
                         inViteUserMap.remove(userId);
 
-                        if(answerEvent.result.equals(
-                                EaseMsgUtils.CALL_ANSWER_BUSY)){
+                        if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_BUSY)) {
                             if(!mConfirm_ring){
                                 runOnUiThread(new Runnable() {
                                     @Override
@@ -840,13 +839,11 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                             }else{
                                 sendCmdMsg(callEvent,username);
                             }
-                        }else if(answerEvent.result.equals(
-                                EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                        }else if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_ACCEPT)){
                             //设置为接听
                             EaseCallKit.getInstance().setCallState(EaseCallState.CALL_ANSWERED);
                             sendCmdMsg(callEvent,answerEvent.userId);
-                        }else if(answerEvent.result.equals(
-                                EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                        }else if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
                             sendCmdMsg(callEvent,answerEvent.userId);
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -868,13 +865,13 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                         String result = confirmEvent.result;
                         timehandler.stopTime();
                         //收到的仲裁为自己设备
-                        if(deviceId.equals(EaseCallKit.deviceId)){
+                        if(TextUtils.equals(deviceId, EaseCallKit.deviceId)) {
                             //收到的仲裁为接听
-                            if(result.equals(EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                            if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
                                 //加入频道
                                 initEngineAndJoinChannel();
 
-                            }else if(result.equals(EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                            }else if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
                                 //退出通话
                                 exitChannel();
                                 if(listener != null){
@@ -887,11 +884,11 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                                 public void run() {
                                     //提示已在其他设备处理
                                     String info = null;
-                                    if(result.equals(EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                                    if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
                                         //已经在其他设备接听
                                         info = getString(R.string.The_other_is_recived);
 
-                                    }else if(result.equals(EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                                    }else if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
                                         //已经在其他设备拒绝
                                         info = getString(R.string.The_other_is_refused);
                                     }
@@ -920,7 +917,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                if(username.equals(userInfo.getUserId()) && incomingCallView != null){
+                                if(TextUtils.equals(username, userInfo.getUserId()) && incomingCallView != null) {
                                     incomingCallView.setInviteInfo(username);
                                 }
                             }
@@ -1351,7 +1348,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                             if(account.getUid() != 0){
                                 uIdMap.put(account.getUid(), account);
                             }
-                            if(!account.getUserName().equals(EMClient.getInstance().getCurrentUser())){
+                            if(!TextUtils.equals(account.getUserName(), EMClient.getInstance().getCurrentUser())) {
                                 updateUserInfo(account.getUid());
                             }else{
                                 localMemberView.updateUserInfo();
@@ -1365,7 +1362,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                                             callConferenceViewGroup.removeView(placeView);
                                         }
                                         //通知更新昵称头像
-                                        if(account.getUserName().equals(username)){
+                                        if(TextUtils.equals(account.getUserName(), username)) {
                                            if(incomingCallView != null){
                                                incomingCallView.setInviteInfo(userName);
                                            }

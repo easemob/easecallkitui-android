@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.os.SystemClock;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -297,7 +298,7 @@ public class EaseCallFloatWindow {
 
             String userAccount = memberView.getUserAccount();
             int uId = memberView.getUserId();
-            boolean isSelf = (userAccount.equals(EMClient.getInstance().getCurrentUser())?true:false);
+            boolean isSelf = TextUtils.equals(userAccount, EMClient.getInstance().getCurrentUser());
             prepareSurfaceView(isSelf,uId);
         }
     }

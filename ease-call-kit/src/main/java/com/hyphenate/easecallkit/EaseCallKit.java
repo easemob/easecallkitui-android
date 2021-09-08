@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.hyphenate.EMCallBack;
@@ -352,7 +353,8 @@ public class EaseCallKit {
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
                     EMLog.d(TAG,"Receive msg:" + message.getMsgId() + " from:" + message.getFrom()+ "  messageType:"+ messageType);
                     //有关通话控制信令
-                    if(messageType.equals(EaseMsgUtils.CALL_MSG_INFO) && !(message.getFrom().equals(EMClient.getInstance().getCurrentUser()))){
+                    if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO)
+                            && !TextUtils.equals(message.getFrom(), EMClient.getInstance().getCurrentUser())) {
                         String action = message.getStringAttribute(EaseMsgUtils.CALL_ACTION, "");
                         String callerDevId = message.getStringAttribute(EaseMsgUtils.CALL_DEVICE_ID, "");
                         String fromCallId = message.getStringAttribute(EaseMsgUtils.CLL_ID, "");
@@ -379,8 +381,7 @@ public class EaseCallKit {
                                 EaseCallType callkitType =
                                         EaseCallType.getfrom(calltype);
                                 if (callState != EaseCallState.CALL_IDLE) {
-                                    if (fromCallId.equals(callID) &&
-                                            fromUser.equals(fromUserId)
+                                    if(TextUtils.equals(fromCallId, callID) && TextUtils.equals(fromUser, fromUserId)
                                             && callkitType == EaseCallType.SINGLE_VOICE_CALL && callType == EaseCallType.SINGLE_VIDEO_CALL) {
                                         InviteEvent inviteEvent = new InviteEvent();
                                         inviteEvent.callId = fromCallId;
@@ -432,7 +433,8 @@ public class EaseCallKit {
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
                     EMLog.d(TAG,"Receive cmdmsg:" + message.getMsgId() + " from:" + message.getFrom()  + "  messageType:"+ messageType);
                     //有关通话控制信令
-                    if(messageType.equals(EaseMsgUtils.CALL_MSG_INFO) && !(message.getFrom().equals(EMClient.getInstance().getCurrentUser()))){
+                    if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO)
+                            && !TextUtils.equals(message.getFrom(), EMClient.getInstance().getCurrentUser())) {
                         String action = message.getStringAttribute(EaseMsgUtils.CALL_ACTION, "");
                         String callerDevId = message.getStringAttribute(EaseMsgUtils.CALL_DEVICE_ID, "");
                         String fromCallId = message.getStringAttribute(EaseMsgUtils.CLL_ID, "");
@@ -450,7 +452,7 @@ public class EaseCallKit {
                                     event.callerDevId = callerDevId;
                                     event.callId = fromCallId;
                                     event.userId = fromUser;
-                                    if(callID.equals(fromCallId)){
+                                    if(TextUtils.equals(callID, fromCallId)) {
                                         callState = EaseCallState.CALL_IDLE;
                                     }
                                     notifier.reset();
@@ -471,7 +473,7 @@ public class EaseCallKit {
                                 boolean vaild = message.getBooleanAttribute(EaseMsgUtils.CALL_STATUS, false);
                                 //多端设备时候用于区别哪个DrviceId,
                                 // 被叫处理自己设备Id的CALL_CONFIRM_RING
-                                if(calledDvId.equals(deviceId)){
+                                if(TextUtils.equals(calledDvId, deviceId)) {
                                     timeHandler.stopTime();
                                     if(!vaild){
                                         //通话无效
@@ -521,7 +523,7 @@ public class EaseCallKit {
                                 //判断不是被叫另外一台设备的漫游消息
                                 //或者是主叫收到的
                                 if(callType != EaseCallType.CONFERENCE_CALL){
-                                    if((isComingCall && calledDevId1.equals(deviceId)) || !isComingCall) {
+                                    if(!isComingCall || TextUtils.equals(calledDevId1, deviceId)) {
                                         AnswerEvent answerEvent = new AnswerEvent();
                                         answerEvent.result = result1;
                                         answerEvent.calleeDevId = calledDevId1;
@@ -534,7 +536,7 @@ public class EaseCallKit {
                                         EaseLiveDataBus.get().with(EaseCallType.SINGLE_VIDEO_CALL.toString()).postValue(answerEvent);
                                     }
                                 }else{
-                                        if(!fromUser.equals(EMClient.getInstance().getCurrentUser())){
+                                        if(!TextUtils.equals(fromUser, EMClient.getInstance().getCurrentUser())) {
                                             AnswerEvent answerEvent = new AnswerEvent();
                                             answerEvent.result = result1;
                                             answerEvent.calleeDevId = calledDevId1;
@@ -551,8 +553,8 @@ public class EaseCallKit {
                                 break;
                             case CALL_VIDEO_TO_VOICE:
                                 if (callState != EaseCallState.CALL_IDLE) {
-                                    if (fromCallId.equals(callID) &&
-                                            fromUser.equals(fromUserId)) {
+                                    if(TextUtils.equals(fromCallId, callID)
+                                            && TextUtils.equals(fromUser, fromUserId)) {
                                         InviteEvent inviteEvent = new InviteEvent();
                                         inviteEvent.callId = fromCallId;
                                         inviteEvent.type = EaseCallType.SINGLE_VOICE_CALL;
@@ -657,7 +659,7 @@ public class EaseCallKit {
         ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningAppProcessInfo appProcess : activityManager.getRunningAppProcesses()) {
             if (appProcess.pid == pid) {
-                return context.getApplicationInfo().packageName.equals(appProcess.processName);
+                return TextUtils.equals(context.getApplicationInfo().packageName, appProcess.processName);
             }
         }
         return false;

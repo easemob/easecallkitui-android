@@ -967,8 +967,8 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                          AlertEvent alertEvent = (AlertEvent)event;
                          //判断会话是否有效
                          ConfirmRingEvent ringEvent = new ConfirmRingEvent();
-                         if(alertEvent.callId.equals
-                                 (EaseCallKit.getInstance().getCallID()) && EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_ANSWERED){
+                         if(TextUtils.equals(alertEvent.callId, EaseCallKit.getInstance().getCallID())
+                                 && EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_ANSWERED) {
                              //发送会话有效消息
                              ringEvent.calleeDevId = alertEvent.calleeDevId;
                              ringEvent.valid = true;
@@ -1001,8 +1001,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                         callEvent.calleeDevId = answerEvent.calleeDevId;
                         callEvent.callerDevId = answerEvent.callerDevId;
                         callEvent.result = answerEvent.result;
-                         if(answerEvent.result.equals(
-                                 EaseMsgUtils.CALL_ANSWER_BUSY)){
+                        if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_BUSY)) {
                              if(!mConfirm_ring){
                                  //退出频道
                                 timehandler.stopTime();
@@ -1024,8 +1023,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                                  timehandler.stopTime();
                                  sendCmdMsg(callEvent,username);
                              }
-                         }else if(answerEvent.result.equals(
-                                 EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                         }else if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_ACCEPT)){
                              //设置为接听
                              EaseCallKit.getInstance().setCallState(EaseCallState.CALL_ANSWERED);
                              timehandler.stopTime();
@@ -1042,8 +1040,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
                                  });
                              }
-                         }else if(answerEvent.result.equals(
-                                 EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                         }else if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
                              timehandler.stopTime();
                              sendCmdMsg(callEvent,username);
                          }
@@ -1069,16 +1066,16 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                          String result = confirmEvent.result;
                          timehandler.stopTime();
                          //收到的仲裁为自己设备
-                         if(deviceId.equals(EaseCallKit.deviceId)){
+                         if(TextUtils.equals(deviceId, EaseCallKit.deviceId)){
 
                              //收到的仲裁为接听
-                             if(result.equals(EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                             if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
                                  EaseCallKit.getInstance().setCallState(EaseCallState.CALL_ANSWERED);
                                  //加入频道
                                  initEngineAndJoinChannel();
                                  makeOngoingStatus();
 
-                             }else if(result.equals(EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                             }else if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
                                  //退出通话
                                  exitChannel();
                              }
@@ -1088,11 +1085,11 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                                  public void run() {
                                      //提示已在其他设备处理
                                      String info = null;
-                                     if(result.equals(EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                                     if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
                                          //已经在其他设备接听
                                          info = getString(R.string.The_other_is_recived);
 
-                                     }else if(result.equals(EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                                     }else if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
                                          //已经在其他设备拒绝
                                          info = getString(R.string.The_other_is_refused);
                                      }
@@ -1308,13 +1305,12 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                     }
                 }else if(event.callAction == EaseCallAction.CALL_CONFIRM_CALLEE){
                     //不为接通状态 退出频道
-                    if(!(((ConfirmCallEvent)event).result).equals(EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                    if(!TextUtils.equals(((ConfirmCallEvent)event).result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
                         exitChannel();
                         String result = ((ConfirmCallEvent)event).result;
 
                         //对方拒绝通话
-                        if(result.equals(EaseMsgUtils.CALL_ANSWER_REFUSE)){
-
+                        if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)) {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -1345,7 +1341,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                     exitChannel();
                 }else if(event.callAction == EaseCallAction.CALL_CONFIRM_CALLEE){
                     //不为接通状态 退出频道
-                    if(!(((ConfirmCallEvent)event).result).equals(EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                    if(!TextUtils.equals(((ConfirmCallEvent)event).result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
                         exitChannel();
                     }
                 }
