@@ -62,5 +62,17 @@
             <enum name="rectangle" value="2" />
         </attr>
     </declare-styleable>
+
+    <declare-styleable name="MyChronometer">
+        <!-- Format string: if specified, the Chronometer will display this
+             string, with the first "%s" replaced by the current timer value
+             in "MM:SS" or "H:MM:SS" form.
+             If no format string is specified, the Chronometer will simply display
+             "MM:SS" or "H:MM:SS". -->
+        <attr name="format" format="string" localization="suggested" />
+        <!-- Specifies whether this Chronometer counts down or counts up from the base.
+              If not specified this is false and the Chronometer counts up. -->
+        <attr name="countDown" format="boolean" />
+    </declare-styleable>
     
 </resources>

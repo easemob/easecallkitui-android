@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="switch_camera">切换摄像头</string>
     <string name="answer">接听</string>
     <string name="change_voice">转音频</string>
@@ -28,4 +28,7 @@
 
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+
+    <!-- The representation of a time duration when negative. An example is -1:14. This can be used with a countdown timer for example.-->
+    <string name="negative_duration">\u2212<xliff:g id="time" example="1:14">%1$s</xliff:g></string>
 </resources>

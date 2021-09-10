@@ -38,7 +38,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.os.SystemClock;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -48,7 +50,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.Chronometer;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -99,12 +100,11 @@ import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_STOPPED;
  * email: Allenlee@easemob.com
  * date: 01/11/2021
  */
-public class EaseVideoCallActivity extends AppCompatActivity implements View.OnClickListener{
+public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.OnClickListener{
 
     private static final String TAG = EaseVideoCallActivity.class.getSimpleName();
 
     private static final int PERMISSION_REQ_ID = 22;
-    private final int REQUEST_CODE_OVERLAY_PERMISSION = 1002;
     private static final String[] REQUESTED_PERMISSIONS = {
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.CAMERA,
@@ -148,6 +148,8 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
 
     //判断是发起者还是被邀请
     protected boolean isInComingCall;
+    // Judge whether is ongoing call
+    protected boolean isOngoingCall;
     protected String username;
     protected String channelName;
 
@@ -172,13 +174,15 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
     protected RelativeLayout oppositeSurface_layout;
     private VideoCanvas mLocalVideo;
     private VideoCanvas mRemoteVideo;
-    private EaseCallType callType;
+    protected EaseCallType callType;
     private View Voice_View;
     private TimeHandler timehandler;
 
     private RtcEngine mRtcEngine;
     private boolean isMuteVideo = false;
     private String agoraAppId = null;
+    // Camera direction: front or back
+    private boolean isCameraFront;
 
     //用于防止多次打开请求悬浮框页面
     private boolean requestOverlayPermission;
@@ -310,7 +314,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 @Override
                 public void run() {
                         remoteUId = uid;
-                        chronometer.start();
+                        startCount();
                         if(EaseCallKit.getInstance().getCallType() == EaseCallType.SINGLE_VOICE_CALL){
                             handsFreeImage.setImageResource(R.drawable.em_icon_speaker_on);
                         }
@@ -360,7 +364,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
 
         //Init View
         initView();
-
+        checkFloatIntent(getIntent());
         //增加LiveData监听
         addLiveDataObserver();
 
@@ -378,12 +382,17 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             isInComingCall = bundle.getBoolean("isComingCall", false);
             username = bundle.getString("username");
             channelName = bundle.getString("channelName");
+            int uId = bundle.getInt("uId",-1);
             callType = EaseCallKit.getInstance().getCallType();
-            EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
+            if(uId == -1) {
+                EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
+            }else {
+                isOngoingCall = true;
+            }
         }
     }
 
-    private void initView(){
+    public void initView(){
         refuseBtn = findViewById(R.id.btn_refuse_call);
         answerBtn = findViewById(R.id.btn_answer_call);
         hangupBtn = findViewById(R.id.btn_hangup_call);
@@ -518,6 +527,10 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 playRing();
             }
         }
+
+        if(isOngoingCall) {
+            makeOngoingStatus();
+        }
     }
 
 
@@ -544,6 +557,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
      * 通话中的状态
      */
     private void makeOngoingStatus() {
+        isOngoingCall = true;
         comingBtnContainer.setVisibility(View.INVISIBLE);
         groupUseInfo.setVisibility(View.INVISIBLE);
         groupHangUp.setVisibility(View.VISIBLE);
@@ -623,7 +637,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             mRtcEngine.setChannelProfile(CHANNEL_PROFILE_LIVE_BROADCASTING);
             mRtcEngine.setClientRole(CLIENT_ROLE_BROADCASTER);
 
-            EaseCallFloatWindow.getInstance(getApplicationContext()).setRtcEngine(mRtcEngine);
+            EaseCallFloatWindow.getInstance().setRtcEngine(getApplicationContext(), mRtcEngine);
         } catch (Exception e) {
             EMLog.e(TAG, Log.getStackTraceString(e));
             throw new RuntimeException("NEED TO check rtc sdk init fatal error\n" + Log.getStackTraceString(e));
@@ -638,12 +652,16 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                     VideoEncoderConfiguration.FRAME_RATE.FRAME_RATE_FPS_15,
                     VideoEncoderConfiguration.STANDARD_BITRATE,
                     VideoEncoderConfiguration.ORIENTATION_MODE.ORIENTATION_MODE_FIXED_PORTRAIT));
+            isCameraFront = true;
         }else{
             mRtcEngine.disableVideo();
         }
     }
 
     private void setupLocalVideo() {
+        if(isFloatWindowShowing()) {
+            return;
+        }
         SurfaceView view = RtcEngine.CreateRendererView(getBaseContext());
         //view.setZOrderMediaOverlay(true);
 //        localSurface_layout.addView(view);
@@ -694,7 +712,14 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         }
     }
 
-
+    private void changeCameraDirection(boolean isFront) {
+        if(isCameraFront != isFront) {
+            if(mRtcEngine != null){
+                mRtcEngine.switchCamera();
+            }
+            isCameraFront = isFront;
+        }
+    }
 
     @Override
     public void onClick(View view) {
@@ -702,7 +727,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         if(id == R.id.btn_refuse_call) {
             stopPlayRing();
             if(isInComingCall){
-                chronometer.stop();
+                stopCount();
 
                 //发送拒绝消息
                 AnswerEvent event = new AnswerEvent();
@@ -725,7 +750,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 sendCmdMsg(event,username);
             }
         } else if (id == R.id.btn_hangup_call) {
-            chronometer.stop();
+            stopCount();
             if(remoteUId == 0){
                 CallCancelEvent cancelEvent = new CallCancelEvent();
                 sendCmdMsg(cancelEvent,username);
@@ -764,9 +789,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 isHandsfreeState = true;
             }
         }else if(id == R.id.btn_switch_camera){
-            if(mRtcEngine != null){
-                mRtcEngine.switchCamera();
-            }
+            changeCameraDirection(!isCameraFront);
         }else if(id == R.id.btn_voice_trans){
             if(callType == EaseCallType.SINGLE_VOICE_CALL){
                 callType = EaseCallType.SINGLE_VIDEO_CALL;
@@ -944,8 +967,8 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                          AlertEvent alertEvent = (AlertEvent)event;
                          //判断会话是否有效
                          ConfirmRingEvent ringEvent = new ConfirmRingEvent();
-                         if(alertEvent.callId.equals
-                                 (EaseCallKit.getInstance().getCallID()) && EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_ANSWERED){
+                         if(TextUtils.equals(alertEvent.callId, EaseCallKit.getInstance().getCallID())
+                                 && EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_ANSWERED) {
                              //发送会话有效消息
                              ringEvent.calleeDevId = alertEvent.calleeDevId;
                              ringEvent.valid = true;
@@ -978,8 +1001,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                         callEvent.calleeDevId = answerEvent.calleeDevId;
                         callEvent.callerDevId = answerEvent.callerDevId;
                         callEvent.result = answerEvent.result;
-                         if(answerEvent.result.equals(
-                                 EaseMsgUtils.CALL_ANSWER_BUSY)){
+                        if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_BUSY)) {
                              if(!mConfirm_ring){
                                  //退出频道
                                 timehandler.stopTime();
@@ -1001,8 +1023,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                                  timehandler.stopTime();
                                  sendCmdMsg(callEvent,username);
                              }
-                         }else if(answerEvent.result.equals(
-                                 EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                         }else if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_ACCEPT)){
                              //设置为接听
                              EaseCallKit.getInstance().setCallState(EaseCallState.CALL_ANSWERED);
                              timehandler.stopTime();
@@ -1019,8 +1040,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
 
                                  });
                              }
-                         }else if(answerEvent.result.equals(
-                                 EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                         }else if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
                              timehandler.stopTime();
                              sendCmdMsg(callEvent,username);
                          }
@@ -1046,16 +1066,16 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                          String result = confirmEvent.result;
                          timehandler.stopTime();
                          //收到的仲裁为自己设备
-                         if(deviceId.equals(EaseCallKit.deviceId)){
+                         if(TextUtils.equals(deviceId, EaseCallKit.deviceId)){
 
                              //收到的仲裁为接听
-                             if(result.equals(EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                             if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
                                  EaseCallKit.getInstance().setCallState(EaseCallState.CALL_ANSWERED);
                                  //加入频道
                                  initEngineAndJoinChannel();
                                  makeOngoingStatus();
 
-                             }else if(result.equals(EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                             }else if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
                                  //退出通话
                                  exitChannel();
                              }
@@ -1065,11 +1085,11 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                                  public void run() {
                                      //提示已在其他设备处理
                                      String info = null;
-                                     if(result.equals(EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                                     if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
                                          //已经在其他设备接听
                                          info = getString(R.string.The_other_is_recived);
 
-                                     }else if(result.equals(EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                                     }else if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
                                          //已经在其他设备拒绝
                                          info = getString(R.string.The_other_is_refused);
                                      }
@@ -1092,7 +1112,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
 
         EaseLiveDataBus.get().with(EaseCallKitUtils.UPDATE_USERINFO, EaseCallUserInfo.class).observe(this, userInfo -> {
             if (userInfo != null) {
-                if(userInfo.getUserId().equals(username)){
+                if(TextUtils.equals(userInfo.getUserId(), username)){
                     //更新本地头像昵称
                     EaseCallKit.getInstance().getCallKitConfig().setUserInfo(username,userInfo);
                     updateUserInfo();
@@ -1285,13 +1305,12 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                     }
                 }else if(event.callAction == EaseCallAction.CALL_CONFIRM_CALLEE){
                     //不为接通状态 退出频道
-                    if(!(((ConfirmCallEvent)event).result).equals(EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                    if(!TextUtils.equals(((ConfirmCallEvent)event).result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
                         exitChannel();
                         String result = ((ConfirmCallEvent)event).result;
 
                         //对方拒绝通话
-                        if(result.equals(EaseMsgUtils.CALL_ANSWER_REFUSE)){
-
+                        if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)) {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -1322,7 +1341,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                     exitChannel();
                 }else if(event.callAction == EaseCallAction.CALL_CONFIRM_CALLEE){
                     //不为接通状态 退出频道
-                    if(!(((ConfirmCallEvent)event).result).equals(EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                    if(!TextUtils.equals(((ConfirmCallEvent)event).result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
                         exitChannel();
                     }
                 }
@@ -1360,6 +1379,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             if (msg.what == MSG_TIMER) {
                 // TODO: update calling time.
                 timePassed++;
+                Log.e("TAG", "TimeHandler timePassed: "+timePassed);
                 String time = dateFormat.format(timePassed * 1000);
 
                 long intervalTime;
@@ -1396,35 +1416,12 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         }
     }
 
-    public long getChronometerSeconds(Chronometer cmt) {
-        long totalss = 0;
-        String string = cmt.getText().toString();
-        if(string.length()==7){
-
-            String[] split = string.split(":");
-            String string2 = split[0];
-            int hour = Integer.parseInt(string2);
-            int Hours =hour*3600;
-            String string3 = split[1];
-            int min = Integer.parseInt(string3);
-            int Mins =min*60;
-            int  SS =Integer.parseInt(split[2]);
-            totalss = Hours+Mins+SS;
-            return totalss;
+    public long getChronometerSeconds(MyChronometer cmt) {
+        if(cmt == null) {
+            EMLog.e(TAG, "MyChronometer is null, can not get the cost seconds!");
+            return 0;
         }
-
-        else if(string.length()==5){
-
-            String[] split = string.split(":");
-            String string3 = split[0];
-            int min = Integer.parseInt(string3);
-            int Mins =min*60;
-            int  SS =Integer.parseInt(split[1]);
-
-            totalss =Mins+SS;
-            return totalss;
-        }
-        return totalss;
+        return cmt.getCostSeconds();
     }
 
 
@@ -1563,46 +1560,23 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         }
     }
 
-    private void showFloatWindow() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (Settings.canDrawOverlays(this)) {
-                doShowFloatWindow();
-            } else { // To reqire the window permission.
-                if(!requestOverlayPermission) {
-                    try {
-                        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
-                        // Add this to open the management GUI specific to this app.
-                        intent.setData(Uri.parse("package:" + getPackageName()));
-                        startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION);
-                        requestOverlayPermission = true;
-                        // Handle the permission require result in #onActivityResult();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        } else {
-            doShowFloatWindow();
-        }
-    }
-
-
     /**
      * 显示悬浮窗
      */
-    private void doShowFloatWindow() {
-        EaseCallFloatWindow.getInstance(getApplicationContext()).show();
+    @Override
+    public void doShowFloatWindow() {
+        super.doShowFloatWindow();
+        if(chronometer != null) {
+            EaseCallFloatWindow.getInstance().setCostSeconds(chronometer.getCostSeconds());
+        }
+        EaseCallFloatWindow.getInstance().show();
         boolean surface = true;
         if(isInComingCall && EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_ANSWERED){
             surface = false;
         }
-        if(changeFlag){
-            EaseCallFloatWindow.getInstance(getApplicationContext()).updateCallWindow(false,remoteUId,surface);
-        }else{
-            EaseCallFloatWindow.getInstance(getApplicationContext()).updateCallWindow(true,0,surface);
-        }
-
-        EaseVideoCallActivity.this.moveTaskToBack(false);
+        EaseCallFloatWindow.getInstance().update(!changeFlag,0, remoteUId,surface);
+        EaseCallFloatWindow.getInstance().setCameraDirection(isCameraFront, changeFlag);
+        moveTaskToBack(false);
     }
 
 
@@ -1646,7 +1620,8 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
                 if(isInComingCall){
                    stopPlayRing();
                 }
-                if(EaseCallFloatWindow.getInstance(getApplicationContext()).isShowing()){
+                isOngoingCall = false;
+                if(isFloatWindowShowing()){
                     EaseCallFloatWindow.getInstance(getApplicationContext()).dismiss();
                 }
 
@@ -1659,51 +1634,62 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         });
     }
 
-
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        checkFloatIntent(intent);
+    }
+
+    private void checkFloatIntent(Intent intent) {
         // 防止activity在后台被start至前台导致window还存在
-        if(intent != null){
-            int uId = intent.getIntExtra("uId",0);
-            if(EaseCallKit.getInstance().getCallState()==EaseCallState.CALL_ANSWERED){
-                if(uId == 0){
-                    SurfaceView localview = RtcEngine.CreateRendererView(getBaseContext());
-                    oppositeSurface_layout.removeAllViews();
-                    oppositeSurface_layout.addView(localview);
-                    mLocalVideo = new VideoCanvas(localview, VideoCanvas.RENDER_MODE_HIDDEN, 0);
-                    mRtcEngine.setupLocalVideo(mLocalVideo);
+        if(isFloatWindowShowing()) {
+            EaseCallFloatWindow.SingleCallInfo callInfo = EaseCallFloatWindow.getInstance().getSingleCallInfo();
+            if(callInfo != null) {
+                remoteUId = callInfo.remoteUid;
+                changeFlag = callInfo.changeFlag;
+                isCameraFront = callInfo.isCameraFront;
+                if(EaseCallKit.getInstance().getCallState()==EaseCallState.CALL_ANSWERED){
+                    if(changeFlag && remoteUId != 0) {
+                        SurfaceView remoteView = RtcEngine.CreateRendererView(getBaseContext());
+                        oppositeSurface_layout.removeAllViews();
+                        oppositeSurface_layout.addView(remoteView);
+                        mRemoteVideo = new VideoCanvas(remoteView, VideoCanvas.RENDER_MODE_HIDDEN, remoteUId);
+                        mRtcEngine.setupRemoteVideo(mRemoteVideo);
 
-                    SurfaceView remoteview = RtcEngine.CreateRendererView(getBaseContext());
-                    localSurface_layout.removeAllViews();
-                    localSurface_layout.addView(remoteview);
-                    mRemoteVideo = new VideoCanvas(remoteview, VideoCanvas.RENDER_MODE_HIDDEN,remoteUId);
-                    mRtcEngine.setupRemoteVideo(mRemoteVideo);
+                        SurfaceView localView = RtcEngine.CreateRendererView(getBaseContext());
+                        localSurface_layout.removeAllViews();
+                        localSurface_layout.addView(localView);
+                        mLocalVideo = new VideoCanvas(localView, VideoCanvas.RENDER_MODE_HIDDEN, 0);
+                        mRtcEngine.setupLocalVideo(mLocalVideo);
+                    }else {
+                        SurfaceView localview = RtcEngine.CreateRendererView(getBaseContext());
+                        oppositeSurface_layout.removeAllViews();
+                        oppositeSurface_layout.addView(localview);
+                        mLocalVideo = new VideoCanvas(localview, VideoCanvas.RENDER_MODE_HIDDEN, 0);
+                        mRtcEngine.setupLocalVideo(mLocalVideo);
 
+                        SurfaceView remoteview = RtcEngine.CreateRendererView(getBaseContext());
+                        localSurface_layout.removeAllViews();
+                        localSurface_layout.addView(remoteview);
+                        mRemoteVideo = new VideoCanvas(remoteview, VideoCanvas.RENDER_MODE_HIDDEN,remoteUId);
+                        mRtcEngine.setupRemoteVideo(mRemoteVideo);
+                    }
                 }else{
-                    SurfaceView remoteView = RtcEngine.CreateRendererView(getBaseContext());
-                    oppositeSurface_layout.removeAllViews();
-                    oppositeSurface_layout.addView(remoteView);
-                    mRemoteVideo = new VideoCanvas(remoteView, VideoCanvas.RENDER_MODE_HIDDEN, remoteUId);
-                    mRtcEngine.setupRemoteVideo(mRemoteVideo);
-
-                    SurfaceView localView = RtcEngine.CreateRendererView(getBaseContext());
-                    localSurface_layout.removeAllViews();
-                    localSurface_layout.addView(localView);
-                    mLocalVideo = new VideoCanvas(localView, VideoCanvas.RENDER_MODE_HIDDEN, 0);
-                    mRtcEngine.setupLocalVideo(mLocalVideo);
+                    if(!isInComingCall){
+                        SurfaceView localview = RtcEngine.CreateRendererView(getBaseContext());
+                        oppositeSurface_layout.removeAllViews();
+                        oppositeSurface_layout.addView(localview);
+                        mLocalVideo = new VideoCanvas(localview, VideoCanvas.RENDER_MODE_HIDDEN, 0);
+                        mRtcEngine.setupLocalVideo(mLocalVideo);
+                    }
                 }
-            }else{
-                if(!isInComingCall){
-                    SurfaceView localview = RtcEngine.CreateRendererView(getBaseContext());
-                    oppositeSurface_layout.removeAllViews();
-                    oppositeSurface_layout.addView(localview);
-                    mLocalVideo = new VideoCanvas(localview, VideoCanvas.RENDER_MODE_HIDDEN, 0);
-                    mRtcEngine.setupLocalVideo(mLocalVideo);
-                }
+                changeCameraDirection(isCameraFront);
             }
+            long totalCostSeconds = EaseCallFloatWindow.getInstance().getTotalCostSeconds();
+            chronometer.setBase(SystemClock.elapsedRealtime() - totalCostSeconds * 1000);
+            chronometer.start();
         }
-        EaseCallFloatWindow.getInstance(getApplicationContext()).dismiss();
+        EaseCallFloatWindow.getInstance().dismiss();
     }
 
 
@@ -1723,7 +1709,18 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         }
     }
 
+    private void startCount() {
+        if(chronometer != null) {
+            chronometer.setBase(SystemClock.elapsedRealtime());
+            chronometer.start();
+        }
+    }
 
+    private void stopCount() {
+        if(chronometer != null) {
+            chronometer.stop();
+        }
+    }
 
     /**
      * 停止事件循环
@@ -1731,7 +1728,6 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
     protected void releaseHandler() {
         handler.sendEmptyMessage(EaseMsgUtils.MSG_RELEASE_HANDLER);
     }
-
 
     @Override
     protected void onDestroy() {
@@ -1741,13 +1737,17 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
         if(timehandler != null){
             timehandler.stopTime();
         }
-        leaveChannel();
-        RtcEngine.destroy();
         if(headBitMap != null){
             headBitMap.recycle();
         }
         if(uIdMap != null){
             uIdMap.clear();
+        }
+        if(!isFloatWindowShowing()) {
+            EaseCallKit.getInstance().releaseCall();
+
+            leaveChannel();
+            RtcEngine.destroy();
         }
     }
 
@@ -1790,7 +1790,7 @@ public class EaseVideoCallActivity extends AppCompatActivity implements View.OnC
             public void onClick(View view) {
                 dialog.dismiss();
                 EMLog.e(TAG, "exitChannelDisplay  exit channel:");
-                chronometer.stop();
+                stopCount();
                 if(remoteUId == 0){
                     CallCancelEvent cancelEvent = new CallCancelEvent();
                     sendCmdMsg(cancelEvent,username);

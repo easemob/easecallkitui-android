@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.hyphenate.EMCallBack;
@@ -16,6 +17,7 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMCmdMessageBody;
 import com.hyphenate.chat.EMConversation;
 import com.hyphenate.chat.EMMessage;
+import com.hyphenate.easecallkit.ui.EaseBaseCallActivity;
 import com.hyphenate.exceptions.HyphenateException;
 import com.hyphenate.util.EMLog;
 import com.hyphenate.util.EasyUtils;
@@ -55,9 +57,7 @@ import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
 
 
 /**
- * author lijian
- * email: Allenlee@easemob.com
- * date: 01/11/2021
+ * The kit is a help class to help developers use CallKit, it provides methods to launch audio and video
  */
 public class EaseCallKit {
     private static final String TAG = EaseCallKit.class.getSimpleName();
@@ -80,8 +80,17 @@ public class EaseCallKit {
     private static boolean isComingCall = true;
     private ArrayList<String> inviteeUsers = new ArrayList<>();
     private EaseCallKitConfig  callKitConfig;
-    private EaseMultipleVideoActivity multipleVideoActivity;
     private EaseCallKitNotifier notifier;
+    private Class<? extends EaseBaseCallActivity> curCallCls;
+    /**
+     * If use the default class, you should register it to AndroidManifest
+     */
+    private Class<? extends EaseVideoCallActivity> defaultVideoCallCls = EaseVideoCallActivity.class;
+
+    /**
+     * If use the default class, you should register it to AndroidManifest
+     */
+    private Class<? extends EaseMultipleVideoActivity> defaultMultiVideoCls = EaseMultipleVideoActivity.class;
 
     private EaseCallKit() {}
 
@@ -118,6 +127,7 @@ public class EaseCallKit {
 
         //设置callkit配置项
         callKitConfig = new EaseCallKitConfig();
+        callKitConfig.setAgoraAppId(config.getAgoraAppId());
         callKitConfig.setUserInfoMap(config.getUserInfoMap());
         callKitConfig.setDefaultHeadImage(config.getDefaultHeadImage());
         callKitConfig.setCallTimeOut(config.getCallTimeOut());
@@ -133,6 +143,21 @@ public class EaseCallKit {
         return true;
     }
 
+    /**
+     * Register the activity which you want to display video call or audio call and you have registered in AndroidManifest.xml
+     * @param videoCallClass
+     */
+    public void registerVideoCallClass(Class<? extends EaseVideoCallActivity> videoCallClass) {
+        defaultVideoCallCls = videoCallClass;
+    }
+
+    /**
+     * Register the activity which you want to display multiple video call and you have registered in AndroidManifest.xml
+     * @param multipleVideoClass
+     */
+    public void registerMultipleVideoClass(Class<? extends EaseMultipleVideoActivity> multipleVideoClass) {
+        defaultMultiVideoCls = multipleVideoClass;
+    }
 
     /**
      * 获取当前callKitConfig
@@ -158,7 +183,6 @@ public class EaseCallKit {
          IM_ERROR  //IM异常
     }
 
-
     public enum CALL_PROCESS_ERROR {
         CALL_STATE_ERROR(0),
         CALL_TYPE_ERROR(1),
@@ -174,11 +198,24 @@ public class EaseCallKit {
 
     /**
      * 加入1v1通话
+     * 注意：在相关activity结束时需要调用{@link #releaseCall()}，防止出现内存泄漏
      * @param type 通话类型(只能为SINGLE_VOICE_CALL或SINGLE_VIDEO_CALL类型）
      * @param user 被叫用户ID(也就是环信ID)
      * @param ext  扩展字段(用户扩展字段)
      */
     public void startSingleCall(final EaseCallType type, final String user,final  Map<String, Object> ext){
+        startSingleCall(type, user, ext, defaultVideoCallCls);
+    }
+
+    /**
+     * 加入1v1通话
+     * 注意：在相关activity结束时需要调用{@link #releaseCall()}，防止出现内存泄漏
+     * @param type 通话类型(只能为SINGLE_VOICE_CALL或SINGLE_VIDEO_CALL类型）
+     * @param user 被叫用户ID(也就是环信ID)
+     * @param ext  扩展字段(用户扩展字段)
+     * @param cls  继承自{@link EaseVideoCallActivity}的activity
+     */
+    public void startSingleCall(final EaseCallType type, final String user,final  Map<String, Object> ext, Class<? extends EaseVideoCallActivity> cls){
         if(callState != EaseCallState.CALL_IDLE){
             if(callListener != null){
                 callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy");
@@ -204,10 +241,9 @@ public class EaseCallKit {
         if(ext != null){
             inviteExt = EaseCallKitUtils.convertMapToJSONObject(ext);
         }
-
+        curCallCls = cls;
         //开始1V1通话
-        EaseVideoCallActivity callActivity = new EaseVideoCallActivity();
-        Intent intent = new Intent(appContext, callActivity.getClass()).addFlags(FLAG_ACTIVITY_NEW_TASK);
+        Intent intent = new Intent(appContext, curCallCls).addFlags(FLAG_ACTIVITY_NEW_TASK);
         Bundle bundle = new Bundle();
         isComingCall = false;
         bundle.putBoolean("isComingCall", false);
@@ -221,10 +257,22 @@ public class EaseCallKit {
 
     /**
      * 邀请加入多人通话
+     * 注意：在相关activity结束时需要调用{@link #releaseCall()}，防止出现内存泄漏
      * @param users 用户ID列表(环信ID列表)
      * @param ext  扩展字段(用户扩展字段)
      */
     public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext){
+        startInviteMultipleCall(users, ext, defaultMultiVideoCls);
+    }
+
+    /**
+     * 邀请加入多人通话
+     * 注意：在相关activity结束时需要调用{@link #releaseCall()}，防止出现内存泄漏
+     * @param users 用户ID列表(环信ID列表)
+     * @param ext  扩展字段(用户扩展字段)
+     * @param cls   继承自{@link EaseMultipleVideoActivity}的activity
+     */
+    public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext, Class<? extends EaseMultipleVideoActivity> cls){
         if(callState != EaseCallState.CALL_IDLE && callType != EaseCallType.CONFERENCE_CALL){
             if(callListener != null){
                 callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy");
@@ -232,9 +280,9 @@ public class EaseCallKit {
             return;
         }
         if(users == null || users.length  == 0) {
-            if(!isDestroy(multipleVideoActivity)){
+            if(curCallCls != null){
                 inviteeUsers.clear();
-                Intent intent = new Intent(appContext, multipleVideoActivity.getClass())
+                Intent intent = new Intent(appContext, curCallCls)
                         .addFlags(FLAG_ACTIVITY_NEW_TASK);
                 appContext.startActivity(intent);
             }else{
@@ -249,15 +297,16 @@ public class EaseCallKit {
                 inviteeUsers.add(user);
             }
             //还没有加入会议 创建会议
-            if(isDestroy(multipleVideoActivity)){
+            if(curCallCls == null){
                 if(users != null && users.length > 0){
                     //改为主动呼叫状态
                     if(ext != null){
                         inviteExt = EaseCallKitUtils.convertMapToJSONObject(ext);
                     }
                     callState = EaseCallState.CALL_OUTGOING;
-                    multipleVideoActivity = new EaseMultipleVideoActivity();
-                    Intent intent = new Intent(appContext, multipleVideoActivity.getClass()).addFlags(FLAG_ACTIVITY_NEW_TASK);
+                    curCallCls = cls;
+                    Intent intent = new Intent(appContext, curCallCls);
+                    intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
                     Bundle bundle = new Bundle();
                     isComingCall = false;
                     bundle.putBoolean("isComingCall", false);
@@ -268,10 +317,27 @@ public class EaseCallKit {
                 }
             }else{
                 //邀请成员加入
-                Intent intent = new Intent(appContext, multipleVideoActivity.getClass())
-                        .addFlags(FLAG_ACTIVITY_NEW_TASK);
+                Intent intent = new Intent(appContext, curCallCls).addFlags(FLAG_ACTIVITY_NEW_TASK);
                 appContext.startActivity(intent);
             }
+        }
+    }
+
+    /**
+     * The method is used for {@link com.hyphenate.easecallkit.base.EaseCallFloatWindow}, other methods are not recommended
+     * @return Current call activity's class, maybe is null.
+     */
+    public Class<? extends EaseBaseCallActivity> getCurrentCallClass() {
+        return curCallCls;
+    }
+
+    /**
+     * If you call {@link #startSingleCall(EaseCallType, String, Map)}, {@link #startSingleCall(EaseCallType, String, Map, Class)}
+     * or {@link #startInviteMultipleCall(String[], Map)}, you should call the method of {@link #releaseCall()} when the {@link #curCallCls} is finishing.
+     */
+    public void releaseCall() {
+        if(curCallCls != null) {
+            curCallCls = null;
         }
     }
 
@@ -287,7 +353,8 @@ public class EaseCallKit {
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
                     EMLog.d(TAG,"Receive msg:" + message.getMsgId() + " from:" + message.getFrom()+ "  messageType:"+ messageType);
                     //有关通话控制信令
-                    if(messageType.equals(EaseMsgUtils.CALL_MSG_INFO) && !(message.getFrom().equals(EMClient.getInstance().getCurrentUser()))){
+                    if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO)
+                            && !TextUtils.equals(message.getFrom(), EMClient.getInstance().getCurrentUser())) {
                         String action = message.getStringAttribute(EaseMsgUtils.CALL_ACTION, "");
                         String callerDevId = message.getStringAttribute(EaseMsgUtils.CALL_DEVICE_ID, "");
                         String fromCallId = message.getStringAttribute(EaseMsgUtils.CLL_ID, "");
@@ -314,8 +381,7 @@ public class EaseCallKit {
                                 EaseCallType callkitType =
                                         EaseCallType.getfrom(calltype);
                                 if (callState != EaseCallState.CALL_IDLE) {
-                                    if (fromCallId.equals(callID) &&
-                                            fromUser.equals(fromUserId)
+                                    if(TextUtils.equals(fromCallId, callID) && TextUtils.equals(fromUser, fromUserId)
                                             && callkitType == EaseCallType.SINGLE_VOICE_CALL && callType == EaseCallType.SINGLE_VIDEO_CALL) {
                                         InviteEvent inviteEvent = new InviteEvent();
                                         inviteEvent.callId = fromCallId;
@@ -367,7 +433,8 @@ public class EaseCallKit {
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
                     EMLog.d(TAG,"Receive cmdmsg:" + message.getMsgId() + " from:" + message.getFrom()  + "  messageType:"+ messageType);
                     //有关通话控制信令
-                    if(messageType.equals(EaseMsgUtils.CALL_MSG_INFO) && !(message.getFrom().equals(EMClient.getInstance().getCurrentUser()))){
+                    if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO)
+                            && !TextUtils.equals(message.getFrom(), EMClient.getInstance().getCurrentUser())) {
                         String action = message.getStringAttribute(EaseMsgUtils.CALL_ACTION, "");
                         String callerDevId = message.getStringAttribute(EaseMsgUtils.CALL_DEVICE_ID, "");
                         String fromCallId = message.getStringAttribute(EaseMsgUtils.CLL_ID, "");
@@ -385,7 +452,7 @@ public class EaseCallKit {
                                     event.callerDevId = callerDevId;
                                     event.callId = fromCallId;
                                     event.userId = fromUser;
-                                    if(callID.equals(fromCallId)){
+                                    if(TextUtils.equals(callID, fromCallId)) {
                                         callState = EaseCallState.CALL_IDLE;
                                     }
                                     notifier.reset();
@@ -406,7 +473,7 @@ public class EaseCallKit {
                                 boolean vaild = message.getBooleanAttribute(EaseMsgUtils.CALL_STATUS, false);
                                 //多端设备时候用于区别哪个DrviceId,
                                 // 被叫处理自己设备Id的CALL_CONFIRM_RING
-                                if(calledDvId.equals(deviceId)){
+                                if(TextUtils.equals(calledDvId, deviceId)) {
                                     timeHandler.stopTime();
                                     if(!vaild){
                                         //通话无效
@@ -456,7 +523,7 @@ public class EaseCallKit {
                                 //判断不是被叫另外一台设备的漫游消息
                                 //或者是主叫收到的
                                 if(callType != EaseCallType.CONFERENCE_CALL){
-                                    if((isComingCall && calledDevId1.equals(deviceId)) || !isComingCall) {
+                                    if(!isComingCall || TextUtils.equals(calledDevId1, deviceId)) {
                                         AnswerEvent answerEvent = new AnswerEvent();
                                         answerEvent.result = result1;
                                         answerEvent.calleeDevId = calledDevId1;
@@ -469,7 +536,7 @@ public class EaseCallKit {
                                         EaseLiveDataBus.get().with(EaseCallType.SINGLE_VIDEO_CALL.toString()).postValue(answerEvent);
                                     }
                                 }else{
-                                        if(!fromUser.equals(EMClient.getInstance().getCurrentUser())){
+                                        if(!TextUtils.equals(fromUser, EMClient.getInstance().getCurrentUser())) {
                                             AnswerEvent answerEvent = new AnswerEvent();
                                             answerEvent.result = result1;
                                             answerEvent.calleeDevId = calledDevId1;
@@ -486,8 +553,8 @@ public class EaseCallKit {
                                 break;
                             case CALL_VIDEO_TO_VOICE:
                                 if (callState != EaseCallState.CALL_IDLE) {
-                                    if (fromCallId.equals(callID) &&
-                                            fromUser.equals(fromUserId)) {
+                                    if(TextUtils.equals(fromCallId, callID)
+                                            && TextUtils.equals(fromUser, fromUserId)) {
                                         InviteEvent inviteEvent = new InviteEvent();
                                         inviteEvent.callId = fromCallId;
                                         inviteEvent.type = EaseCallType.SINGLE_VOICE_CALL;
@@ -592,7 +659,7 @@ public class EaseCallKit {
         ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningAppProcessInfo appProcess : activityManager.getRunningAppProcesses()) {
             if (appProcess.pid == pid) {
-                return context.getApplicationInfo().packageName.equals(appProcess.processName);
+                return TextUtils.equals(context.getApplicationInfo().packageName, appProcess.processName);
             }
         }
         return false;
@@ -691,9 +758,10 @@ public class EaseCallKit {
                 String info = "";
                 String userName = EaseCallKitUtils.getUserNickName(fromUserId);
                 if(callType != EaseCallType.CONFERENCE_CALL){
+
                     //启动activity
-                    EaseVideoCallActivity callActivity = new EaseVideoCallActivity();
-                    Intent intent = new Intent(appContext, callActivity.getClass()).addFlags(FLAG_ACTIVITY_NEW_TASK);
+                    curCallCls = defaultVideoCallCls;
+                    Intent intent = new Intent(appContext, curCallCls).addFlags(FLAG_ACTIVITY_NEW_TASK);
                     Bundle bundle = new Bundle();
                     isComingCall = true;
                     bundle.putBoolean("isComingCall", true);
@@ -712,9 +780,8 @@ public class EaseCallKit {
                     }
                 }else {
                     //启动多人通话界面
-                    multipleVideoActivity =
-                            new EaseMultipleVideoActivity();
-                    Intent intent = new Intent(appContext, multipleVideoActivity.getClass()).addFlags(FLAG_ACTIVITY_NEW_TASK);
+                    curCallCls = defaultMultiVideoCls;
+                    Intent intent = new Intent(appContext, curCallCls).addFlags(FLAG_ACTIVITY_NEW_TASK);
                     Bundle bundle = new Bundle();
                     isComingCall = true;
                     bundle.putBoolean("isComingCall", true);
@@ -758,10 +825,6 @@ public class EaseCallKit {
 
     public void InitInviteeUsers() {
          inviteeUsers.clear();
-    }
-
-    public void setMultipleVideoActivity(EaseMultipleVideoActivity activity) {
-        this.multipleVideoActivity = null;
     }
 
     public JSONObject getInviteExt() {

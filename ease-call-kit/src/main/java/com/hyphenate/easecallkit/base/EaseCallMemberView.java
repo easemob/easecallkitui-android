@@ -44,7 +44,7 @@ public class EaseCallMemberView extends RelativeLayout {
     private SurfaceView surfaceView;
     private ValueAnimator animator;
 
-    private UserInfo userInfo;
+    private EaseUserAccount userInfo;
 
     private boolean isVideoOff = true;
     private boolean isAudioOff = false;
@@ -55,7 +55,8 @@ public class EaseCallMemberView extends RelativeLayout {
     private String headUrl;
     private EaseCallMemberView memberView;
     private LinearLayout loading_dialog;
-
+    private boolean speakActivated;
+    private boolean isCameraFront;
 
 
     public EaseCallMemberView(Context context) {
@@ -96,22 +97,22 @@ public class EaseCallMemberView extends RelativeLayout {
     }
 
     public void setUserInfo(UserInfo info){
-        userInfo = info;
-        if(userInfo != null){
-            nameView.setText(EaseCallKitUtils.getUserNickName(info.userAccount));
-            headUrl = EaseCallKitUtils.getUserHeadImage(info.userAccount);
-            if(headUrl != null){
-                loadHeadImage();
-            }else{
-                avatarView.setImageResource(R.drawable.call_memberview_background);
-            }
+        if(info == null) {
+            return;
         }
+        EaseUserAccount account = new EaseUserAccount(info.uid, info.userAccount);
+        setUserInfo(account);
+    }
+
+    public void setUserInfo(EaseUserAccount info) {
+        userInfo = info;
+        updateUserInfo();
     }
 
     public void updateUserInfo(){
         if(userInfo != null){
-            nameView.setText(EaseCallKitUtils.getUserNickName(userInfo.userAccount));
-            headUrl = EaseCallKitUtils.getUserHeadImage(userInfo.userAccount);
+            nameView.setText(EaseCallKitUtils.getUserNickName(userInfo.getUserName()));
+            headUrl = EaseCallKitUtils.getUserHeadImage(userInfo.getUserName());
             if(headUrl != null){
                 loadHeadImage();
             }else{
@@ -120,23 +121,23 @@ public class EaseCallMemberView extends RelativeLayout {
         }
     }
 
-    public UserInfo getUserInfo(){
+    public EaseUserAccount getUserInfo(){
         return  userInfo;
     }
+
     public String getUserAccount(){
         if(userInfo != null){
-            return userInfo.userAccount;
+            return userInfo.getUserName();
         }
         return null;
     }
 
     public int getUserId(){
         if(userInfo != null){
-            return userInfo.uid;
+            return userInfo.getUid();
         }
         return 0;
     }
-
 
     public SurfaceView getSurfaceView() {
         return this.surfaceView;
@@ -278,6 +279,10 @@ public class EaseCallMemberView extends RelativeLayout {
         }
     }
 
+    public boolean isFullScreen() {
+        return isFullScreenMode;
+    }
+
 
     /**
      * 加载用户配置头像
@@ -323,6 +328,22 @@ public class EaseCallMemberView extends RelativeLayout {
                 avatarView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
             }
         }
+    }
+
+    public void setSpeakActivated(boolean activated) {
+        this.speakActivated = activated;
+    }
+
+    public boolean isSpeakActivated() {
+        return speakActivated;
+    }
+
+    public void setCameraDirectionFront(boolean isFront) {
+        this.isCameraFront = isFront;
+    }
+
+    public boolean isCameraDirectionFront() {
+        return this.isCameraFront;
     }
 }
 
