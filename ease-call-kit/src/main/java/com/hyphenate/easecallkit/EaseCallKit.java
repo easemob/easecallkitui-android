@@ -70,7 +70,7 @@ public class EaseCallKit {
     private String channelName;
     private String fromUserId; //被叫获取主叫的
     public static String deviceId = "android_";
-    public  String clallee_devId;
+    public  String callee_devId;
     private String callID = null;
     private JSONObject inviteExt = null;
     private EaseCallInfo callInfo = new EaseCallInfo();
@@ -483,7 +483,7 @@ public class EaseCallKit {
                                         if(callState == EaseCallState.CALL_IDLE){
                                             callState = EaseCallState.CALL_ALERTING;
                                             //对方主叫的设备信息
-                                            clallee_devId = callerDevId;
+                                            callee_devId = callerDevId;
                                             callID = fromCallId;
                                             EaseCallInfo info = callInfoMap.get(fromCallId);
                                             if(info != null){
@@ -644,8 +644,8 @@ public class EaseCallKit {
 
     public void setCallID(String callID) { this.callID = callID; }
 
-    public String  getClallee_devId() {
-        return clallee_devId;
+    public String getCallee_devId() {
+        return callee_devId;
     }
 
     public EaseCallKitListener getCallListener() {
