@@ -202,6 +202,7 @@ public class EaseCallKit {
      * @param type 通话类型(只能为SINGLE_VOICE_CALL或SINGLE_VIDEO_CALL类型）
      * @param user 被叫用户ID(也就是环信ID)
      * @param ext  扩展字段(用户扩展字段)
+     * @param resultId 自定义标识，用来区分呼叫失败的callback是由哪个方法引起的
      */
     public void startSingleCall(final EaseCallType type, final String user,final  Map<String, Object> ext, String resultId){
         startSingleCall(type, user, ext, defaultVideoCallCls, resultId);
@@ -214,6 +215,7 @@ public class EaseCallKit {
      * @param user 被叫用户ID(也就是环信ID)
      * @param ext  扩展字段(用户扩展字段)
      * @param cls  继承自{@link EaseVideoCallActivity}的activity
+     * @param resultId 自定义标识，用来区分呼叫失败的callback是由哪个方法引起的
      */
     public void startSingleCall(final EaseCallType type, final String user,final  Map<String, Object> ext, Class<? extends EaseVideoCallActivity> cls, String resultId){
         if(callState != EaseCallState.CALL_IDLE){
