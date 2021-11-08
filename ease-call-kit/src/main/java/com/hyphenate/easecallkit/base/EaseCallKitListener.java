@@ -55,7 +55,7 @@ public interface EaseCallKitListener{
      * @param errorCode      错误码
      * @param description   错误描述
      */
-    void onCallError(EaseCallKit.EaseCallError type, int errorCode, String description);
+    void onCallError(EaseCallKit.EaseCallError type, int errorCode, String description, String resultId);
 
 
     /**

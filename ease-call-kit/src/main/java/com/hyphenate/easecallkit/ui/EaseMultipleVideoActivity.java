@@ -114,7 +114,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
     private ImageButton cameraSwitch;
     private ImageButton speakerSwitch;
     private ImageButton changeCameraSwitch;
-    private ImageButton hangupBtn;;
+    private ImageButton hangupBtn;
     private ImageView inviteBtn;
     private ImageView floatBtn;
 
@@ -165,7 +165,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             super.onError(err);
             EMLog.d(TAG,"IRtcEngineEventHandler onError:" + err);
             if(listener != null){
-                listener.onCallError(EaseCallKit.EaseCallError.RTC_ERROR,err,"rtc error");
+                listener.onCallError(EaseCallKit.EaseCallError.RTC_ERROR,err,"rtc error",null);
             }
         }
 
@@ -1237,7 +1237,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                         EMLog.e(TAG, "Invite call error " + code + ", " + error + " username:" + username);
 
                         if (listener != null) {
-                            listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR, code, error);
+                            listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR, code, error, null);
                             listener.onInViteCallMessageSent();
                         }
                     }
@@ -1308,7 +1308,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
                 conversation.removeMessage(message.getMsgId());
                 if(listener != null){
-                    listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
+                    listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error, null);
                 }
                 if(event.callAction == EaseCallAction.CALL_CANCEL){
                     //退出频道
