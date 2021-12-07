@@ -776,7 +776,7 @@ public class EaseCallKit {
                         }else{
                             info = appContext.getString(R.string.alert_request_voice, userName);
                         }
-                        notifier.notify(intent, "环信 ", info);
+                        notifier.notify(intent, appContext.getString(R.string.easemob), info);
                     }
                 }else {
                     //启动多人通话界面
@@ -791,7 +791,7 @@ public class EaseCallKit {
                     appContext.startActivity(intent);
                     if (Build.VERSION.SDK_INT >= 29 && isAppRunningForeground(appContext)) {
                         info = appContext.getString(R.string.alert_request_multiple_video, userName);
-                        notifier.notify(intent, "Hyphenate", info);
+                        notifier.notify(intent, appContext.getString(R.string.easemob), info);
                     }
                 }
 

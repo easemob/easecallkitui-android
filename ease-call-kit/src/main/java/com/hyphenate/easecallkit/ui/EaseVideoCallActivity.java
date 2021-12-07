@@ -482,11 +482,11 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         float_btn.setOnClickListener(this);
 
         if(isInComingCall){
-            call_stateView.setText("邀请你进行音视频通话");
-            tv_call_state_voice.setText("邀请你进行音视频通话");
+            call_stateView.setText(getApplicationContext().getString(R.string.invite_you_for_audio_and_video_call));
+            tv_call_state_voice.setText(getApplicationContext().getString(R.string.invite_you_for_audio_and_video_call));
         }else{
-            call_stateView.setText("正在等待对方接受邀请");
-            tv_call_state_voice.setText("正在等待对方接受邀请");
+            call_stateView.setText(getApplicationContext().getString(R.string.waiting_for_accept));
+            tv_call_state_voice.setText(getApplicationContext().getString(R.string.waiting_for_accept));
         }
 
         //如果是语音通话
@@ -584,7 +584,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             videoCallingGroup.setVisibility(View.GONE);
             voiceCallingGroup.setVisibility(View.VISIBLE);
             tv_nick_voice.setText(EaseCallKitUtils.getUserNickName(username));
-            tv_call_state_voice.setText("通话中");
+            tv_call_state_voice.setText(getApplicationContext().getString(R.string.in_the_call));
         }
 
         video_transe_layout.setVisibility(View.GONE);
@@ -929,7 +929,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 //语音通话UI可见
                 Voice_View.setVisibility(View.VISIBLE);
                 avatarView.setVisibility(View.VISIBLE);
-                tv_call_state_voice.setText("通话中");
+                tv_call_state_voice.setText(getApplicationContext().getString(R.string.in_the_call));
                 makeOngoingStatus();
             }else{
                 localSurface_layout.setVisibility(View.GONE);
@@ -937,9 +937,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 rootView.setBackground(getResources().getDrawable(R.drawable.call_bg_voice));
 
                 if(isInComingCall){
-                    tv_call_state_voice.setText("邀请你进行音视频通话");
+                    tv_call_state_voice.setText(getApplicationContext().getString(R.string.invite_you_for_audio_and_video_call));
                 }else{
-                    tv_call_state_voice.setText("正在等待对方接受邀请");
+                    tv_call_state_voice.setText(getApplicationContext().getString(R.string.waiting_for_accept));
                     if(!isInComingCall){
                         voiceContronlLayout.setVisibility(View.VISIBLE);
                     }
@@ -1161,9 +1161,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         mConfirm_ring = false;
         final EMMessage message;
         if(callType == EaseCallType.SINGLE_VIDEO_CALL){
-            message = EMMessage.createTxtSendMessage( "邀请您进行视频通话", username);
+            message = EMMessage.createTxtSendMessage( getApplicationContext().getString(R.string.invite_you_for_video_call), username);
         }else{
-            message = EMMessage.createTxtSendMessage( "邀请您进行语音通话", username);
+            message = EMMessage.createTxtSendMessage( getApplicationContext().getString(R.string.invite_you_for_audio_call), username);
         }
         message.setAttribute(EaseMsgUtils.CALL_ACTION, EaseCallAction.CALL_INVITE.state);
         message.setAttribute(EaseMsgUtils.CALL_CHANNELNAME, channelName);

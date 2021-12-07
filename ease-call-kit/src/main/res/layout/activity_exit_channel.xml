@@ -19,7 +19,7 @@
             android:gravity="center"
             android:textColor="#3A3A3A"
             android:textSize="16sp"
-            android:text="确定要离开当前通话" />
+            android:text="@string/make_sure_leave" />
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="40dp"
@@ -31,14 +31,14 @@
                 android:layout_alignParentLeft="true"
                 android:layout_marginLeft="50dp"
                 android:background="@color/color_transparent"
-                android:text="取消"
+                android:text="@string/cancel"
                 android:textColor="#333333"
                 android:textSize="16sp"/>
             <Button
                 android:id="@+id/btn_ok"
                 android:layout_width="60dp"
                 android:layout_height="match_parent"
-                android:text="确定"
+                android:text="@string/determine"
                 android:background="@color/color_transparent"
                 android:layout_alignParentRight="true"
                 android:layout_marginRight="50dp"

@@ -59,7 +59,7 @@
         android:paddingRight="12dp"
         android:textColor="@color/white"
         android:textSize="@dimen/em_size_big"
-        tools:text="正在等待对方接受邀请"
+        tools:text="@string/waiting_for_accept"
         android:visibility="visible" />
 
     <View
@@ -111,7 +111,7 @@
         android:paddingRight="12dp"
         android:textColor="@color/white"
         android:textSize="@dimen/em_size_big"
-        android:text="正在等待对方接受邀请"
+        android:text="@string/waiting_for_accept"
         android:visibility="visible" />
 
 

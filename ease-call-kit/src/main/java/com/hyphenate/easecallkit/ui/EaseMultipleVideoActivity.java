@@ -1185,7 +1185,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                     }
                 });
 
-                final EMMessage message = EMMessage.createTxtSendMessage("邀请您进行多人音视频通话", username);
+                final EMMessage message = EMMessage.createTxtSendMessage(getApplicationContext().getString(R.string.invited_to_make_multi_party_call), username);
                 message.setAttribute(EaseMsgUtils.CALL_ACTION, EaseCallAction.CALL_INVITE.state);
                 message.setAttribute(EaseMsgUtils.CALL_CHANNELNAME, channelName);
                 message.setAttribute(EaseMsgUtils.CALL_TYPE, callType.code);
