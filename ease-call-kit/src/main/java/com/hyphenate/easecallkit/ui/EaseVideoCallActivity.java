@@ -564,6 +564,8 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         comingBtnContainer.setVisibility(View.INVISIBLE);
         groupUseInfo.setVisibility(View.INVISIBLE);
         groupHangUp.setVisibility(View.VISIBLE);
+        callType = EaseCallKit.getInstance().getCallType();
+        EaseCallFloatWindow.getInstance().setCallType(callType);
         if(callType == EaseCallType.SINGLE_VIDEO_CALL){
             groupOngoingSettings.setVisibility(View.VISIBLE);
             localSurface_layout.setVisibility(View.VISIBLE);
@@ -748,6 +750,12 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 event.callId = EaseCallKit.getInstance().getCallID();
                 event.callerDevId = EaseCallKit.getInstance().getClallee_devId();
                 event.calleeDevId = EaseCallKit.deviceId;
+                if (TextUtils.isEmpty(username)){
+                    username = EaseCallKit.getInstance().getFromUserId();
+                }
+                if (TextUtils.isEmpty(channelName)){
+                    channelName = EaseCallKit.getInstance().getChannelName();
+                }
                 sendCmdMsg(event,username);
             }
         } else if (id == R.id.btn_hangup_call) {
