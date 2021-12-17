@@ -155,7 +155,8 @@
         app:layout_constraintRight_toLeftOf="@id/btn_hangup_call"
         android:layout_marginBottom="40dp"
         android:scaleType="fitCenter"
-        android:src="@drawable/call_mute_normal" />
+        android:src="@drawable/call_mute_normal"
+        />
 
     <TextView
         android:id="@+id/tv_mute"
@@ -167,7 +168,8 @@
         android:textColor="@color/white"
         app:layout_constraintLeft_toLeftOf="@id/iv_mute"
         app:layout_constraintRight_toRightOf="@id/iv_mute"
-        app:layout_constraintTop_toBottomOf="@id/iv_mute"/>
+        app:layout_constraintTop_toBottomOf="@id/iv_mute"
+        />
 
     <ImageView
         android:id="@+id/iv_handsfree"
@@ -179,7 +181,8 @@
         app:layout_constraintTop_toTopOf="@id/btn_hangup_call"
         app:layout_constraintBottom_toBottomOf="parent"
         android:scaleType="fitCenter"
-        android:src="@drawable/em_icon_speaker_normal" />
+        android:src="@drawable/em_icon_speaker_normal"
+        />
 
 
     <TextView
@@ -192,7 +195,8 @@
         android:textColor="@color/white"
         app:layout_constraintLeft_toLeftOf="@id/iv_handsfree"
         app:layout_constraintRight_toRightOf="@id/iv_handsfree"
-        app:layout_constraintTop_toBottomOf="@id/iv_handsfree"/>
+        app:layout_constraintTop_toBottomOf="@id/iv_handsfree"
+        />
 
     <RelativeLayout
         android:id="@+id/bnt_video_transe"

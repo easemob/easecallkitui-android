@@ -116,7 +116,6 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
     private ImageButton refuseBtn;
     private ImageButton answerBtn;
     private ImageButton hangupBtn;
-    private Group voiceContronlLayout;
 
     private Group groupHangUp;
     private Group groupUseInfo;
@@ -316,6 +315,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                         remoteUId = uid;
                         startCount();
                         if(EaseCallKit.getInstance().getCallType() == EaseCallType.SINGLE_VOICE_CALL){
+                            voiceCalledGroup.setVisibility(View.VISIBLE);
                             handsFreeImage.setImageResource(R.drawable.em_icon_speaker_on);
                         }
                 }
@@ -375,6 +375,8 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         }
 
         timehandler = new TimeHandler();
+
+        EaseCallKit.getInstance().getNotifier().reset();
     }
 
     private void initParams(Bundle bundle){
@@ -389,6 +391,11 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             }else {
                 isOngoingCall = true;
             }
+        }else{
+            isInComingCall = EaseCallKit.getInstance().getIsComingCall();
+            username = EaseCallKit.getInstance().getFromUserId();
+            channelName = EaseCallKit.getInstance().getChannelName();
+            EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
         }
     }
 
@@ -396,7 +403,6 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         refuseBtn = findViewById(R.id.btn_refuse_call);
         answerBtn = findViewById(R.id.btn_answer_call);
         hangupBtn = findViewById(R.id.btn_hangup_call);
-        voiceContronlLayout = findViewById(R.id.ll_voice_control);
         comingBtnContainer = findViewById(R.id.ll_coming_call);
         avatarView = findViewById(R.id.iv_avatar);
         iv_avatar_voice = findViewById(R.id.iv_avatar_voice);
@@ -431,9 +437,6 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 video_transe_comming_layout.setVisibility(View.GONE);
             }
         }else{
-            if(!isInComingCall){
-                voiceContronlLayout.setVisibility(View.VISIBLE);
-            }
             videoCallingGroup.setVisibility(View.GONE);
             video_transe_layout.setVisibility(View.GONE);
             video_transe_comming_layout.setVisibility(View.GONE);
@@ -448,6 +451,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         //通话中页面
         videoCalledGroup = findViewById(R.id.ll_video_called);
         voiceCalledGroup =findViewById(R.id.ll_voice_control);
+        voiceCalledGroup.setVisibility(View.INVISIBLE);
 
         btn_voice_trans = findViewById(R.id.btn_voice_trans);
         btn_voice_trans.setOnClickListener(this);
@@ -538,7 +542,6 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
      * 来电话的状态
      */
     private void makeComingStatus() {
-        voiceContronlLayout.setVisibility(View.INVISIBLE);
         comingBtnContainer.setVisibility(View.VISIBLE);
         groupUseInfo.setVisibility(View.VISIBLE);
         if(callType == EaseCallType.SINGLE_VIDEO_CALL){
@@ -569,9 +572,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             hangupBtn.setVisibility(View.VISIBLE);
             videoCallingGroup.setVisibility(View.GONE);
             voiceCallingGroup.setVisibility(View.GONE);
-            voiceContronlLayout.setVisibility(View.GONE);
         }else{
-            voiceContronlLayout.setVisibility(View.VISIBLE);
             groupOngoingSettings.setVisibility(View.VISIBLE);
             avatarView.setVisibility(View.VISIBLE);
             localSurface_layout.setVisibility(View.GONE);
@@ -597,9 +598,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
      */
     public void makeCallStatus() {
         if(!isInComingCall && callType == EaseCallType.SINGLE_VOICE_CALL){
-            voiceContronlLayout.setVisibility(View.VISIBLE);
+            voiceCalledGroup.setVisibility(View.INVISIBLE);
         }else{
-            voiceContronlLayout.setVisibility(View.INVISIBLE);
+            voiceCalledGroup.setVisibility(View.INVISIBLE);
            //oppositeSurface_layout.setVisibility(View.INVISIBLE);
         }
         comingBtnContainer.setVisibility(View.INVISIBLE);
@@ -612,7 +613,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
     public void groupRequestLayout() {
         comingBtnContainer.requestLayout();
-        //voiceContronlLayout.requestLayout();
+        //voiceCalledGroup.requestLayout();
         groupHangUp.requestLayout();
         groupUseInfo.requestLayout();
         groupOngoingSettings.requestLayout();
@@ -831,9 +832,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             video_transe_comming_layout.setVisibility(View.GONE);
             voiceCallingGroup.setVisibility(View.VISIBLE);
             tv_nick_voice.setText(EaseCallKitUtils.getUserNickName(username));
-            if(!isInComingCall){
-                voiceContronlLayout.setVisibility(View.VISIBLE);
-            }
+//            if(!isInComingCall){
+//                voiceCalledGroup.setVisibility(View.VISIBLE);
+//            }
             if(isInComingCall){
                 stopPlayRing();
                 //发送接听消息
@@ -940,9 +941,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                     tv_call_state_voice.setText(getApplicationContext().getString(R.string.invite_you_for_audio_and_video_call));
                 }else{
                     tv_call_state_voice.setText(getApplicationContext().getString(R.string.waiting_for_accept));
-                    if(!isInComingCall){
-                        voiceContronlLayout.setVisibility(View.VISIBLE);
-                    }
+//                    if(!isInComingCall){
+//                        voiceCalledGroup.setVisibility(View.VISIBLE);
+//                    }
                 }
                 videoCallingGroup.setVisibility(View.GONE);
                 video_transe_layout.setVisibility(View.GONE);
@@ -971,11 +972,13 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                                  && EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_ANSWERED) {
                              //发送会话有效消息
                              ringEvent.calleeDevId = alertEvent.calleeDevId;
+                             ringEvent.callId = alertEvent.callId;
                              ringEvent.valid = true;
                              sendCmdMsg(ringEvent,username);
                          }else{
                              //发送会话无效消息
                              ringEvent.calleeDevId = alertEvent.calleeDevId;
+                             ringEvent.callId = alertEvent.callId;
                              ringEvent.valid = false;
                              sendCmdMsg(ringEvent, username);
                          }
@@ -1256,7 +1259,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
         message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
         message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, EaseCallKit.deviceId);
-        message.setAttribute(EaseMsgUtils.CLL_ID, EaseCallKit.getInstance().getCallID());
+        message.setAttribute(EaseMsgUtils.CLL_ID, event.callId);
         message.setAttribute(EaseMsgUtils.CLL_TIMESTRAMEP, System.currentTimeMillis());
         message.setAttribute(EaseMsgUtils.CALL_MSG_TYPE, EaseMsgUtils.CALL_MSG_INFO);
         if(event.callAction == EaseCallAction.CALL_CONFIRM_RING){
@@ -1812,5 +1815,13 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 EMLog.e(TAG, "exitChannelDisplay not exit channel");
             }
         });
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if(EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_IDLE){
+            showFloatWindow();
+        }
     }
 }

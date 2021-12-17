@@ -166,6 +166,9 @@ public class EaseImageView extends AppCompatImageView {
             return;
         }
         Bitmap bitmap = getBitmapFromDrawable(drawable);
+        if(bitmap == null){
+            return;
+        }
         drawDrawable(canvas, bitmap);
 
         if(isClickable()){

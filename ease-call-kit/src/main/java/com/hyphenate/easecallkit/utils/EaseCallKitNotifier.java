@@ -244,7 +244,8 @@ public class EaseCallKitNotifier {
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setWhen(System.currentTimeMillis())
                 .setAutoCancel(true)
-                .setFullScreenIntent(fullScreenPendingIntent, true);
+                .setContentIntent(fullScreenPendingIntent);
+//                .setFullScreenIntent(fullScreenPendingIntent, true);
     }
 
     /**

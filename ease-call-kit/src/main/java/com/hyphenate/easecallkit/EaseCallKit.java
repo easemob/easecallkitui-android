@@ -652,7 +652,21 @@ public class EaseCallKit {
         return callListener;
     }
 
+    public String getChannelName(){
+        return channelName;
+    }
 
+    public String getFromUserId(){
+        return fromUserId;
+    }
+
+    public boolean getIsComingCall(){
+        return isComingCall;
+    }
+
+    public EaseCallKitNotifier getNotifier(){
+        return notifier;
+    }
 
     private boolean isMainProcess(Context context) {
         int pid = android.os.Process.myPid();

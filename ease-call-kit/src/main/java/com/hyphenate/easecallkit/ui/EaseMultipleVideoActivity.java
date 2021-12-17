@@ -525,6 +525,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
         timehandler = new TimeHandler();
         timeUpdataTimer = new TimeHandler();
         checkConference(true);
+        EaseCallKit.getInstance().getNotifier().reset();
     }
 
 
@@ -592,6 +593,11 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             channelName = bundle.getString("channelName");
             callType = EaseCallKit.getInstance().getCallType();
            // invite_ext = bundle.getString(CALL_INVITE_EXT);
+        }else{
+            isInComingCall = EaseCallKit.getInstance().getIsComingCall();
+            username = EaseCallKit.getInstance().getFromUserId();
+            channelName = EaseCallKit.getInstance().getChannelName();
+            callType = EaseCallKit.getInstance().getCallType();
         }
     }
 
