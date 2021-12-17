@@ -1244,45 +1244,13 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
      * 发送CMD回复信息
      * @param username
      */
-    private void sendCmdMsg(BaseEvent event,String username){
-        final EMMessage message = EMMessage.createSendMessage(EMMessage.Type.CMD);
-        String action="rtcCall";
-        EMCmdMessageBody cmdBody = new EMCmdMessageBody(action);
-        message.setTo(username);
-        message.addBody(cmdBody);
-        if(event.callAction.equals(EaseCallAction.CALL_VIDEO_TO_VOICE) ||
-                event.callAction.equals(EaseCallAction.CALL_CANCEL)){
-            cmdBody.deliverOnlineOnly(false);
-        }else{
-            cmdBody.deliverOnlineOnly(true);
-        }
-
-        message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
-        message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, EaseCallKit.deviceId);
-        message.setAttribute(EaseMsgUtils.CLL_ID, event.callId);
-        message.setAttribute(EaseMsgUtils.CLL_TIMESTRAMEP, System.currentTimeMillis());
-        message.setAttribute(EaseMsgUtils.CALL_MSG_TYPE, EaseMsgUtils.CALL_MSG_INFO);
-        if(event.callAction == EaseCallAction.CALL_CONFIRM_RING){
-            message.setAttribute(EaseMsgUtils.CALL_STATUS, ((ConfirmRingEvent)event).valid);
-            message.setAttribute(EaseMsgUtils.CALLED_DEVICE_ID, ((ConfirmRingEvent)event).calleeDevId);
-        }else if(event.callAction == EaseCallAction.CALL_CONFIRM_CALLEE){
-            message.setAttribute(EaseMsgUtils.CALL_RESULT, ((ConfirmCallEvent)event).result);
-            message.setAttribute(EaseMsgUtils.CALLED_DEVICE_ID, ((ConfirmCallEvent)event).calleeDevId);
-        }else if(event.callAction == EaseCallAction.CALL_ANSWER){
-            message.setAttribute(EaseMsgUtils.CALL_RESULT, ((AnswerEvent)event).result);
-            message.setAttribute(EaseMsgUtils.CALLED_DEVICE_ID, ((AnswerEvent) event).calleeDevId);
-            message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, ((AnswerEvent) event).callerDevId);
-            message.setAttribute(EaseMsgUtils.CALLED_TRANSE_VOICE, ((AnswerEvent) event).transVoice);
-        }
-        final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
-        message.setMessageStatusCallback(new EMCallBack() {
+    private void  sendCmdMsg(BaseEvent event,String username){
+        EaseCallKit.getInstance().sendCmdMsg(event, username, new EMCallBack() {
             @Override
             public void onSuccess() {
-                EMLog.d(TAG, "Invite call success");
-                conversation.removeMessage(message.getMsgId());
                 if(event.callAction == EaseCallAction.CALL_CANCEL){
                     //退出频道
-                    exitChannel();
+                    resetState();
 
                     boolean cancel = ((CallCancelEvent)event).cancel;
                     if(cancel){
@@ -1309,7 +1277,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 }else if(event.callAction == EaseCallAction.CALL_CONFIRM_CALLEE){
                     //不为接通状态 退出频道
                     if(!TextUtils.equals(((ConfirmCallEvent)event).result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
-                        exitChannel();
+                        resetState();
                         String result = ((ConfirmCallEvent)event).result;
 
                         //对方拒绝通话
@@ -1333,19 +1301,16 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             @Override
             public void onError(int code, String error) {
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
-                if(conversation != null){
-                    conversation.removeMessage(message.getMsgId());
-                }
                 if(listener != null){
                     listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
                 }
                 if(event.callAction == EaseCallAction.CALL_CANCEL){
                     //退出频道
-                    exitChannel();
+                    resetState();
                 }else if(event.callAction == EaseCallAction.CALL_CONFIRM_CALLEE){
                     //不为接通状态 退出频道
                     if(!TextUtils.equals(((ConfirmCallEvent)event).result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
-                        exitChannel();
+                        resetState();
                     }
                 }
             }
@@ -1355,7 +1320,6 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
             }
         });
-        EMClient.getInstance().chatManager().sendMessage(message);
     }
 
     private class TimeHandler extends Handler {
@@ -1612,6 +1576,20 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         }
     }
 
+    private void resetState(){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if(isInComingCall){
+                    stopPlayRing();
+                }
+                isOngoingCall = false;
+
+                finish();
+            }
+        });
+    }
+
     /**
      * 退出频道
      */
@@ -1620,10 +1598,6 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             @Override
             public void run() {
                 EMLog.i(TAG, "exit channel channelName: " + channelName);
-                if(isInComingCall){
-                   stopPlayRing();
-                }
-                isOngoingCall = false;
                 if(isFloatWindowShowing()){
                     EaseCallFloatWindow.getInstance(getApplicationContext()).dismiss();
                 }
@@ -1631,8 +1605,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 //重置状态
                 EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDLE);
                 EaseCallKit.getInstance().setCallID(null);
-
-                finish();
+                resetState();
             }
         });
     }

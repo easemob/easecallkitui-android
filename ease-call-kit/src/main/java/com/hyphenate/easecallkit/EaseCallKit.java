@@ -17,6 +17,8 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMCmdMessageBody;
 import com.hyphenate.chat.EMConversation;
 import com.hyphenate.chat.EMMessage;
+import com.hyphenate.easecallkit.base.EaseCallFloatWindow;
+import com.hyphenate.easecallkit.event.ConfirmRingEvent;
 import com.hyphenate.easecallkit.ui.EaseBaseCallActivity;
 import com.hyphenate.exceptions.HyphenateException;
 import com.hyphenate.util.EMLog;
@@ -82,6 +84,7 @@ public class EaseCallKit {
     private EaseCallKitConfig  callKitConfig;
     private EaseCallKitNotifier notifier;
     private Class<? extends EaseBaseCallActivity> curCallCls;
+    private Handler handler;
     /**
      * If use the default class, you should register it to AndroidManifest
      */
@@ -140,6 +143,8 @@ public class EaseCallKit {
         //增加接收消息回调
         addMessageListener();
         callKitInit = true;
+
+        handler = new Handler(appContext.getMainLooper());
         return true;
     }
 
@@ -847,5 +852,92 @@ public class EaseCallKit {
 
     public Context getAppContext() {
         return appContext;
+    }
+
+    public void sendCmdMsg(BaseEvent event,String username, EMCallBack callBack){
+        final EMMessage message = EMMessage.createSendMessage(EMMessage.Type.CMD);
+        String action="rtcCall";
+        EMCmdMessageBody cmdBody = new EMCmdMessageBody(action);
+        message.setTo(username);
+        message.addBody(cmdBody);
+        if(event.callAction.equals(EaseCallAction.CALL_VIDEO_TO_VOICE) ||
+                event.callAction.equals(EaseCallAction.CALL_CANCEL)){
+            cmdBody.deliverOnlineOnly(false);
+        }else{
+            cmdBody.deliverOnlineOnly(true);
+        }
+
+        message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
+        message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, EaseCallKit.deviceId);
+        message.setAttribute(EaseMsgUtils.CLL_ID, event.callId);
+        message.setAttribute(EaseMsgUtils.CLL_TIMESTRAMEP, System.currentTimeMillis());
+        message.setAttribute(EaseMsgUtils.CALL_MSG_TYPE, EaseMsgUtils.CALL_MSG_INFO);
+        if(event.callAction == EaseCallAction.CALL_CONFIRM_RING){
+            message.setAttribute(EaseMsgUtils.CALL_STATUS, ((ConfirmRingEvent)event).valid);
+            message.setAttribute(EaseMsgUtils.CALLED_DEVICE_ID, ((ConfirmRingEvent)event).calleeDevId);
+        }else if(event.callAction == EaseCallAction.CALL_CONFIRM_CALLEE){
+            message.setAttribute(EaseMsgUtils.CALL_RESULT, ((ConfirmCallEvent)event).result);
+            message.setAttribute(EaseMsgUtils.CALLED_DEVICE_ID, ((ConfirmCallEvent)event).calleeDevId);
+        }else if(event.callAction == EaseCallAction.CALL_ANSWER){
+            message.setAttribute(EaseMsgUtils.CALL_RESULT, ((AnswerEvent)event).result);
+            message.setAttribute(EaseMsgUtils.CALLED_DEVICE_ID, ((AnswerEvent) event).calleeDevId);
+            message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, ((AnswerEvent) event).callerDevId);
+            message.setAttribute(EaseMsgUtils.CALLED_TRANSE_VOICE, ((AnswerEvent) event).transVoice);
+        }
+        final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
+        message.setMessageStatusCallback(new EMCallBack() {
+            @Override
+            public void onSuccess() {
+                EMLog.d(TAG, "Invite call success");
+                conversation.removeMessage(message.getMsgId());
+                if(event.callAction == EaseCallAction.CALL_CANCEL){
+                    exitCall();
+                }else if(event.callAction == EaseCallAction.CALL_CONFIRM_CALLEE){
+                    //不为接通状态 退出频道
+                    if(!TextUtils.equals(((ConfirmCallEvent)event).result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
+                        exitCall();
+                    }
+                }
+                callBack.onSuccess();
+            }
+
+            @Override
+            public void onError(int code, String error) {
+                EMLog.e(TAG, "Invite call error " + code + ", " + error);
+                if(conversation != null){
+                    conversation.removeMessage(message.getMsgId());
+                }
+                if(event.callAction == EaseCallAction.CALL_CANCEL){
+                    //退出频道
+                    exitCall();
+                }else if(event.callAction == EaseCallAction.CALL_CONFIRM_CALLEE){
+                    //不为接通状态 退出频道
+                    if(!TextUtils.equals(((ConfirmCallEvent)event).result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
+                        exitCall();
+                    }
+                }
+                callBack.onError(code, error);
+            }
+
+            @Override
+            public void onProgress(int progress, String status) {
+
+            }
+        });
+        EMClient.getInstance().chatManager().sendMessage(message);
+    }
+
+    private void exitCall(){
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if(EaseCallFloatWindow.getInstance().isShowing()){
+                    EaseCallFloatWindow.getInstance(appContext).dismiss();
+                }
+                //重置状态
+                setCallState(EaseCallState.CALL_IDLE);
+                setCallID(null);
+            }
+        });
     }
 }
