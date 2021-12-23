@@ -525,6 +525,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
         timehandler = new TimeHandler();
         timeUpdataTimer = new TimeHandler();
         checkConference(true);
+        EaseCallKit.getInstance().getNotifier().reset();
     }
 
 
@@ -592,6 +593,11 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             channelName = bundle.getString("channelName");
             callType = EaseCallKit.getInstance().getCallType();
            // invite_ext = bundle.getString(CALL_INVITE_EXT);
+        }else{
+            isInComingCall = EaseCallKit.getInstance().getIsComingCall();
+            username = EaseCallKit.getInstance().getFromUserId();
+            channelName = EaseCallKit.getInstance().getChannelName();
+            callType = EaseCallKit.getInstance().getCallType();
         }
     }
 
@@ -1185,7 +1191,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                     }
                 });
 
-                final EMMessage message = EMMessage.createTxtSendMessage("邀请您进行多人音视频通话", username);
+                final EMMessage message = EMMessage.createTxtSendMessage(getApplicationContext().getString(R.string.invited_to_make_multi_party_call), username);
                 message.setAttribute(EaseMsgUtils.CALL_ACTION, EaseCallAction.CALL_INVITE.state);
                 message.setAttribute(EaseMsgUtils.CALL_CHANNELNAME, channelName);
                 message.setAttribute(EaseMsgUtils.CALL_TYPE, callType.code);

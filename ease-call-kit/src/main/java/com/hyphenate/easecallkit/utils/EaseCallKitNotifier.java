@@ -16,6 +16,7 @@ import android.os.Vibrator;
 import android.text.TextUtils;
 
 import com.hyphenate.chat.EMMessage;
+import com.hyphenate.easecallkit.R;
 import com.hyphenate.util.EMLog;
 import com.hyphenate.util.EasyUtils;
 
@@ -26,9 +27,6 @@ import androidx.core.app.NotificationCompat;
 
 public class EaseCallKitNotifier {
     private final static String TAG = "EaseCallKitNotifier";
-
-    protected final static String MSG_ENG = "%s contacts sent %s messages";
-    protected final static String MSG_CH = "%s个联系人发来%s条消息";
 
     protected static int NOTIFY_ID = 0525; // start notification id
 
@@ -62,11 +60,7 @@ public class EaseCallKitNotifier {
         }
 
         packageName = appContext.getApplicationInfo().packageName;
-        if ("zh".equals(Locale.getDefault().getLanguage())) {
-            msg = MSG_CH;
-        } else {
-            msg = MSG_ENG;
-        }
+        msg = appContext.getString(R.string.contact_send_message);
 
         audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
         vibrator = (Vibrator) appContext.getSystemService(Context.VIBRATOR_SERVICE);
@@ -250,7 +244,8 @@ public class EaseCallKitNotifier {
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setWhen(System.currentTimeMillis())
                 .setAutoCancel(true)
-                .setFullScreenIntent(fullScreenPendingIntent, true);
+                .setContentIntent(fullScreenPendingIntent);
+//                .setFullScreenIntent(fullScreenPendingIntent, true);
     }
 
     /**

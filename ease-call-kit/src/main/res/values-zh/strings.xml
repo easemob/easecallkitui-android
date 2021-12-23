@@ -1,0 +1,48 @@
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="switch_camera">切换摄像头</string>
+    <string name="answer">接听</string>
+    <string name="change_voice">转音频</string>
+    <string name="hang_up">挂断</string>
+    <string name="Hands_free">免提</string>
+    <string name="password">密码</string>
+    <string name="mute">静音</string>
+    <string name="recording_video">录制视频</string>
+    <string name="The_other_is_recived">已在其他设备接听</string>
+    <string name="The_other_is_refused">已在其他设备挂断</string>
+    <string name="The_other_is_busy">对方正在忙碌中</string>
+    <string name="The_coming_call">收到来电</string>
+    <string name="alert_window_permission_denied">当前App未被授予悬浮窗权限 :(</string>
+    <string name="The_Conference_call_currently_in_progress">当前正在音视频通话中,请稍后重试...</string>
+    <string name="title_activity_ease_multiple_video">EaseMultipleVideoActivity</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">第一个Fragment</string>
+    <string name="second_fragment_label">第二个Fragment</string>
+    <string name="next">下一个</string>
+    <string name="previous">以前的</string>
+    <string name="wait_calling">等待接听</string>
+    <string name="wait_recive">等待接听</string>
+
+    <string name="alert_request_video">%1$s 发起视频邀请</string>
+    <string name="alert_request_voice">%1$s 发起语音邀请</string>
+    <string name="alert_request_multiple_video">%1$s 发起多人视频邀请</string>
+
+    <string name="hello_first_fragment">Hello first fragment</string>
+    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+
+    <!-- The representation of a time duration when negative. An example is -1:14. This can be used with a countdown timer for example.-->
+    <string name="negative_duration">\u2212<xliff:g id="time" example="1:14">%1$s</xliff:g></string>
+
+    <string name="invited_to_join_video_call">邀请您加入视频通话</string>
+    <string name="camera">摄像头</string>
+    <string name="waiting_for_accept">正在等待对方接受邀请</string>
+    <string name="make_sure_leave">确定要离开当前通话</string>
+    <string name="invited_to_make_multi_party_call">邀请您进行多人音视频通话</string>
+    <string name="invite_you_for_audio_and_video_call">邀请你进行音视频通话</string>
+    <string name="in_the_call">通话中</string>
+    <string name="invite_you_for_video_call">邀请您进行视频通话</string>
+    <string name="invite_you_for_audio_call">邀请您进行语音通话</string>
+    <string name="determine">确定</string>
+    <string name="cancel">取消</string>
+    <string name="easemob">环信</string>
+    <string name="contact_send_message">%1$s个联系人发来%2$s条消息</string>
+    </resources>
