@@ -869,7 +869,7 @@ public class EaseCallKit {
 
         message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
         message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, EaseCallKit.deviceId);
-        message.setAttribute(EaseMsgUtils.CLL_ID, event.callId);
+        message.setAttribute(EaseMsgUtils.CLL_ID, callID);
         message.setAttribute(EaseMsgUtils.CLL_TIMESTRAMEP, System.currentTimeMillis());
         message.setAttribute(EaseMsgUtils.CALL_MSG_TYPE, EaseMsgUtils.CALL_MSG_INFO);
         if(event.callAction == EaseCallAction.CALL_CONFIRM_RING){
