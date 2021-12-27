@@ -42,4 +42,5 @@
     <string name="cancel">Cancel</string>
     <string name="easemob">Easemob</string>
     <string name="contact_send_message">You have %2$s message(s) from %1$s contact(s)</string>
+    <string name="turn_audio">Audio</string>
 </resources>

@@ -45,4 +45,5 @@
     <string name="cancel">取消</string>
     <string name="easemob">环信</string>
     <string name="contact_send_message">%1$s个联系人发来%2$s条消息</string>
+    <string name="turn_audio">转音频</string>
     </resources>
