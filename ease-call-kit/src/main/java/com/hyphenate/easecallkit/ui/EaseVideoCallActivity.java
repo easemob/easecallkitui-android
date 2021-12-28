@@ -1012,6 +1012,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                         callEvent.calleeDevId = answerEvent.calleeDevId;
                         callEvent.callerDevId = answerEvent.callerDevId;
                         callEvent.result = answerEvent.result;
+                        callEvent.callId = answerEvent.callId;
                         if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_BUSY)) {
                              if(!mConfirm_ring){
                                  //退出频道
