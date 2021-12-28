@@ -1,7 +1,7 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="switch_camera">Change camera</string>
     <string name="answer">Answer</string>
-    <string name="change_voice">Convert to audio</string>
+    <string name="change_voice">Audio</string>
     <string name="hang_up">Hang up</string>
     <string name="Hands_free">Hands-free</string>
     <string name="password">Password</string>
