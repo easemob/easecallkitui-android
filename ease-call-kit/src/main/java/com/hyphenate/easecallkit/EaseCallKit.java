@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
@@ -126,7 +128,9 @@ public class EaseCallKit {
 
         //获取设备序列号
         deviceId += EaseCallKitUtils.getPhoneSign();
-        timeHandler = new TimeHandler();
+        final HandlerThread handlerThread = new HandlerThread("callkit-time");
+        handlerThread.start();
+        timeHandler = new TimeHandler(handlerThread.getLooper());
 
         //设置callkit配置项
         callKitConfig = new EaseCallKitConfig();
@@ -739,7 +743,8 @@ public class EaseCallKit {
         private DateFormat dateFormat = null;
         private int timePassed = 0;
 
-        public TimeHandler() {
+        public TimeHandler(Looper looper) {
+            super(looper);
             dateFormat = new SimpleDateFormat("HH:mm:ss");
             dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         }
