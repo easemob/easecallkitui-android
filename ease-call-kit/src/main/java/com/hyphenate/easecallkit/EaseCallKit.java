@@ -2,6 +2,7 @@ package com.hyphenate.easecallkit;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -28,6 +29,7 @@ import com.hyphenate.util.EasyUtils;
 
 import org.json.JSONObject;
 
+import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -58,6 +60,8 @@ import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static com.hyphenate.easecallkit.utils.EaseCallKitUtils.isAppRunningForeground;
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
+
+import androidx.annotation.RequiresApi;
 
 
 /**
@@ -678,14 +682,33 @@ public class EaseCallKit {
     }
 
     private boolean isMainProcess(Context context) {
-        int pid = android.os.Process.myPid();
-        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningAppProcessInfo appProcess : activityManager.getRunningAppProcesses()) {
-            if (appProcess.pid == pid) {
-                return TextUtils.equals(context.getApplicationInfo().packageName, appProcess.processName);
-            }
+        String processName;
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            processName = getProcessNameByApplication();
+        }else {
+            processName = getProcessNameByReflection();
         }
-        return false;
+        return context.getApplicationInfo().packageName.equals(processName);
+    }
+
+    private String getProcessNameByReflection() {
+        String processName = null;
+        try {
+            final Method declaredMethod = Class.forName("android.app.ActivityThread", false, Application.class.getClassLoader())
+                    .getDeclaredMethod("currentProcessName", (Class<?>[]) new Class[0]);
+            declaredMethod.setAccessible(true);
+            final Object invoke = declaredMethod.invoke(null, new Object[0]);
+            if (invoke instanceof String) {
+                processName = (String) invoke;
+            }
+        } catch (Throwable e) {
+        }
+        return processName;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.P)
+    private String getProcessNameByApplication() {
+        return Application.getProcessName();
     }
 
 
