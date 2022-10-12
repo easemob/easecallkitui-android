@@ -1,24 +1,10 @@
 package com.hyphenate.easecallkit.ui;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.Group;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import com.hyphenate.easecallkit.EaseCallKit;
-import com.hyphenate.easecallkit.R;
-import com.hyphenate.easecallkit.base.EaseCallFloatWindow;
-import com.hyphenate.easecallkit.base.EaseCallKitConfig;
-import com.hyphenate.easecallkit.base.EaseCallKitTokenCallback;
-import com.hyphenate.easecallkit.base.EaseCallUserInfo;
-import com.hyphenate.easecallkit.base.EaseGetUserAccountCallback;
-import com.hyphenate.easecallkit.base.EaseUserAccount;
-import com.hyphenate.easecallkit.event.*;
-import com.hyphenate.easecallkit.event.BaseEvent;
-import com.hyphenate.easecallkit.livedatas.EaseLiveDataBus;
-import com.hyphenate.easecallkit.utils.EaseCallAction;
-import com.hyphenate.easecallkit.base.EaseCallEndReason;
-import com.hyphenate.easecallkit.base.EaseCallKitListener;
-import com.hyphenate.easecallkit.base.EaseCallType;
+import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
+import static io.agora.rtc.Constants.CHANNEL_PROFILE_LIVE_BROADCASTING;
+import static io.agora.rtc.Constants.CLIENT_ROLE_BROADCASTER;
+import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED;
+import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_STOPPED;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -56,11 +42,40 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.constraintlayout.widget.Group;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import com.hyphenate.EMCallBack;
 import com.hyphenate.chat.EMClient;
-import com.hyphenate.chat.EMCmdMessageBody;
 import com.hyphenate.chat.EMConversation;
 import com.hyphenate.chat.EMMessage;
+import com.hyphenate.easecallkit.EaseCallKit;
+import com.hyphenate.easecallkit.R;
+import com.hyphenate.easecallkit.base.EaseCallEndReason;
+import com.hyphenate.easecallkit.base.EaseCallFloatWindow;
+import com.hyphenate.easecallkit.base.EaseCallKitConfig;
+import com.hyphenate.easecallkit.base.EaseCallKitListener;
+import com.hyphenate.easecallkit.base.EaseCallKitTokenCallback;
+import com.hyphenate.easecallkit.base.EaseCallType;
+import com.hyphenate.easecallkit.base.EaseCallUserInfo;
+import com.hyphenate.easecallkit.base.EaseGetUserAccountCallback;
+import com.hyphenate.easecallkit.base.EaseUserAccount;
+import com.hyphenate.easecallkit.event.AlertEvent;
+import com.hyphenate.easecallkit.event.AnswerEvent;
+import com.hyphenate.easecallkit.event.BaseEvent;
+import com.hyphenate.easecallkit.event.CallCancelEvent;
+import com.hyphenate.easecallkit.event.ConfirmCallEvent;
+import com.hyphenate.easecallkit.event.ConfirmRingEvent;
+import com.hyphenate.easecallkit.event.InviteEvent;
+import com.hyphenate.easecallkit.event.VideoToVoiceeEvent;
+import com.hyphenate.easecallkit.livedatas.EaseLiveDataBus;
+import com.hyphenate.easecallkit.utils.EaseCallAction;
+import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
+import com.hyphenate.easecallkit.utils.EaseCallState;
+import com.hyphenate.easecallkit.utils.EaseMsgUtils;
+import com.hyphenate.easecallkit.widget.EaseImageView;
+import com.hyphenate.easecallkit.widget.MyChronometer;
 import com.hyphenate.util.EMLog;
 
 import org.json.JSONException;
@@ -77,22 +92,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import com.hyphenate.easecallkit.utils.EaseCallState;
-import com.hyphenate.easecallkit.utils.EaseMsgUtils;
-import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
-import com.hyphenate.easecallkit.widget.EaseImageView;
-import com.hyphenate.easecallkit.widget.MyChronometer;
 import io.agora.rtc.IRtcEngineEventHandler;
 import io.agora.rtc.RtcEngine;
 import io.agora.rtc.models.UserInfo;
 import io.agora.rtc.video.VideoCanvas;
 import io.agora.rtc.video.VideoEncoderConfiguration;
-
-import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
-import static io.agora.rtc.Constants.CHANNEL_PROFILE_LIVE_BROADCASTING;
-import static io.agora.rtc.Constants.CLIENT_ROLE_BROADCASTER;
-import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED;
-import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_STOPPED;
 
 
 /**
@@ -260,7 +264,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 public void run() {
                     //检测到对方进来
                     makeOngoingStatus();
-
+                    startCount();
                     String userName = null;
                     if(uIdMap != null){
                         EaseUserAccount account = uIdMap.get(uid);
@@ -313,7 +317,6 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 @Override
                 public void run() {
                         remoteUId = uid;
-                        startCount();
                         if(EaseCallKit.getInstance().getCallType() == EaseCallType.SINGLE_VOICE_CALL){
                             voiceCalledGroup.setVisibility(View.VISIBLE);
                             handsFreeImage.setImageResource(R.drawable.em_icon_speaker_on);
@@ -969,8 +972,8 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
      * 增加LiveData监听
      */
     protected void addLiveDataObserver(){
-        EaseLiveDataBus.get().with(EaseCallType.SINGLE_VIDEO_CALL.toString(), BaseEvent.class).observe(this, event -> {
-            if(event != null) {
+        EaseLiveDataBus.get().with(EaseCallType.SINGLE_VIDEO_CALL.toString(), BaseEvent.class).observeForever( event -> {
+            if(event != null&&timehandler!=null) {
                 switch (event.callAction){
                     case CALL_ALERT:
                          AlertEvent alertEvent = (AlertEvent)event;
