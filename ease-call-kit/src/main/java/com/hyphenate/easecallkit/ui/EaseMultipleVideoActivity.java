@@ -781,8 +781,8 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
      * 增加LiveData监听
      */
     protected void addLiveDataObserver(){
-        EaseLiveDataBus.get().with(EaseCallType.SINGLE_VIDEO_CALL.toString(), BaseEvent.class).observe(this, event -> {
-            if(event != null) {
+        EaseLiveDataBus.get().with(EaseCallType.SINGLE_VIDEO_CALL.toString(), BaseEvent.class).observeForever( event -> {
+            if(event != null&&timehandler!=null) {
                 switch (event.callAction){
                     case CALL_ALERT:
                         AlertEvent alertEvent = (AlertEvent)event;
