@@ -45,6 +45,7 @@ import android.widget.Toast;
 import androidx.constraintlayout.widget.Group;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.Observer;
 
 import com.hyphenate.EMCallBack;
 import com.hyphenate.chat.EMClient;
@@ -353,6 +354,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         }
     };
 
+    private Observer observer;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -368,6 +370,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         //Init View
         initView();
         checkFloatIntent(getIntent());
+
         //增加LiveData监听
         addLiveDataObserver();
 
@@ -743,7 +746,6 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 event.calleeDevId = EaseCallKit.deviceId;
                 sendCmdMsg(event,username);
             }
-
         } else if (id == R.id.btn_answer_call) {
             if(isInComingCall){
                 stopPlayRing();
@@ -972,158 +974,162 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
      * 增加LiveData监听
      */
     protected void addLiveDataObserver(){
-        EaseLiveDataBus.get().with(EaseCallType.SINGLE_VIDEO_CALL.toString(), BaseEvent.class).observeForever( event -> {
-            if(event != null&&timehandler!=null) {
-                switch (event.callAction){
-                    case CALL_ALERT:
-                         AlertEvent alertEvent = (AlertEvent)event;
-                         //判断会话是否有效
-                         ConfirmRingEvent ringEvent = new ConfirmRingEvent();
-                         if(TextUtils.equals(alertEvent.callId, EaseCallKit.getInstance().getCallID())
-                                 && EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_ANSWERED) {
-                             //发送会话有效消息
-                             ringEvent.calleeDevId = alertEvent.calleeDevId;
-                             ringEvent.callId = alertEvent.callId;
-                             ringEvent.valid = true;
-                             sendCmdMsg(ringEvent,username);
-                         }else{
-                             //发送会话无效消息
-                             ringEvent.calleeDevId = alertEvent.calleeDevId;
-                             ringEvent.callId = alertEvent.callId;
-                             ringEvent.valid = false;
-                             sendCmdMsg(ringEvent, username);
-                         }
-                         //已经发送过会话确认消息
-                         mConfirm_ring = true;
-                         break;
-                    case CALL_CANCEL:
-                         if(!isInComingCall){
-                             //停止仲裁定时器
-                             timehandler.stopTime();
-                         }
-                         //取消通话
-                         exitChannel();
-                        if(listener != null){
-                            //对方取消
-                            listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonRemoteCancel,0);
-                        }
-                        break;
-                    case CALL_ANSWER:
-                        AnswerEvent answerEvent = (AnswerEvent)event;
-                        ConfirmCallEvent callEvent = new ConfirmCallEvent();
-                        boolean transVoice = answerEvent.transVoice;
-                        callEvent.calleeDevId = answerEvent.calleeDevId;
-                        callEvent.callerDevId = answerEvent.callerDevId;
-                        callEvent.result = answerEvent.result;
-                        callEvent.callId = answerEvent.callId;
-                        if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_BUSY)) {
-                             if(!mConfirm_ring){
-                                 //退出频道
-                                timehandler.stopTime();
-                                runOnUiThread(new Runnable() {
-                                     @Override
-                                     public void run() {
-                                         //提示对方正在忙碌中
-                                         String info = getString(R.string.The_other_is_busy);
-                                         Toast.makeText(getApplicationContext(),info , Toast.LENGTH_SHORT).show();
-                                         //退出通话
-                                         exitChannel();
+       observer=new Observer<BaseEvent>() {
+           @Override
+           public void onChanged(BaseEvent event) {
+               if(event != null&&timehandler!=null) {
+                   switch (event.callAction){
+                       case CALL_ALERT:
+                           AlertEvent alertEvent = (AlertEvent)event;
+                           //判断会话是否有效
+                           ConfirmRingEvent ringEvent = new ConfirmRingEvent();
+                           if(TextUtils.equals(alertEvent.callId, EaseCallKit.getInstance().getCallID())
+                                   && EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_ANSWERED) {
+                               //发送会话有效消息
+                               ringEvent.calleeDevId = alertEvent.calleeDevId;
+                               ringEvent.callId = alertEvent.callId;
+                               ringEvent.valid = true;
+                               sendCmdMsg(ringEvent,username);
+                           }else{
+                               //发送会话无效消息
+                               ringEvent.calleeDevId = alertEvent.calleeDevId;
+                               ringEvent.callId = alertEvent.callId;
+                               ringEvent.valid = false;
+                               sendCmdMsg(ringEvent, username);
+                           }
+                           //已经发送过会话确认消息
+                           mConfirm_ring = true;
+                           break;
+                       case CALL_CANCEL:
+                           if(!isInComingCall){
+                               //停止仲裁定时器
+                               timehandler.stopTime();
+                           }
+                           //取消通话
+                           exitChannel();
+                           if(listener != null){
+                               //对方取消
+                               listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonRemoteCancel,0);
+                           }
+                           break;
+                       case CALL_ANSWER:
+                           AnswerEvent answerEvent = (AnswerEvent)event;
+                           ConfirmCallEvent callEvent = new ConfirmCallEvent();
+                           boolean transVoice = answerEvent.transVoice;
+                           callEvent.calleeDevId = answerEvent.calleeDevId;
+                           callEvent.callerDevId = answerEvent.callerDevId;
+                           callEvent.result = answerEvent.result;
+                           callEvent.callId = answerEvent.callId;
+                           if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_BUSY)) {
+                               if(!mConfirm_ring){
+                                   //退出频道
+                                   timehandler.stopTime();
+                                   runOnUiThread(new Runnable() {
+                                       @Override
+                                       public void run() {
+                                           //提示对方正在忙碌中
+                                           String info = getString(R.string.The_other_is_busy);
+                                           Toast.makeText(getApplicationContext(),info , Toast.LENGTH_SHORT).show();
+                                           //退出通话
+                                           exitChannel();
 
-                                         if(listener != null){
-                                             //对方正在忙碌中
-                                             listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonBusy,0); }
-                                         }
-                                 });
-                             }else{
-                                 timehandler.stopTime();
-                                 sendCmdMsg(callEvent,username);
-                             }
-                         }else if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_ACCEPT)){
-                             //设置为接听
-                             EaseCallKit.getInstance().setCallState(EaseCallState.CALL_ANSWERED);
-                             timehandler.stopTime();
-                             sendCmdMsg(callEvent,username);
-                             if(transVoice){
-                                 runOnUiThread(new Runnable() {
-                                     @Override
-                                     public void run() {
-                                         callType = EaseCallType.SINGLE_VOICE_CALL;
-                                         EaseCallKit.getInstance().setCallType(EaseCallType.SINGLE_VOICE_CALL);
-                                         EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
-                                         changeVideoVoiceState();
-                                     }
+                                           if(listener != null){
+                                               //对方正在忙碌中
+                                               listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonBusy,0); }
+                                       }
+                                   });
+                               }else{
+                                   timehandler.stopTime();
+                                   sendCmdMsg(callEvent,username);
+                               }
+                           }else if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_ACCEPT)){
+                               //设置为接听
+                               EaseCallKit.getInstance().setCallState(EaseCallState.CALL_ANSWERED);
+                               timehandler.stopTime();
+                               sendCmdMsg(callEvent,username);
+                               if(transVoice){
+                                   runOnUiThread(new Runnable() {
+                                       @Override
+                                       public void run() {
+                                           callType = EaseCallType.SINGLE_VOICE_CALL;
+                                           EaseCallKit.getInstance().setCallType(EaseCallType.SINGLE_VOICE_CALL);
+                                           EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
+                                           changeVideoVoiceState();
+                                       }
 
-                                 });
-                             }
-                         }else if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
-                             timehandler.stopTime();
-                             sendCmdMsg(callEvent,username);
-                         }
-                         break;
-                    case CALL_INVITE:
-                         //收到转音频事件
-                         InviteEvent inviteEvent = (InviteEvent)event;
-                         if(inviteEvent.type == EaseCallType.SINGLE_VOICE_CALL){
-                             callType = EaseCallType.SINGLE_VOICE_CALL;
-                             EaseCallKit.getInstance().setCallType(EaseCallType.SINGLE_VOICE_CALL);
-                             EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
-                             if(mRtcEngine != null){
-                                 mRtcEngine.disableVideo();
-                             }
-                             changeVideoVoiceState();
-                         }
-                         break;
-                    case CALL_CONFIRM_RING:
-                         break;
-                    case CALL_CONFIRM_CALLEE:
-                         ConfirmCallEvent confirmEvent = (ConfirmCallEvent)event;
-                         String deviceId = confirmEvent.calleeDevId;
-                         String result = confirmEvent.result;
-                         timehandler.stopTime();
-                         //收到的仲裁为自己设备
-                         if(TextUtils.equals(deviceId, EaseCallKit.deviceId)){
+                                   });
+                               }
+                           }else if(TextUtils.equals(answerEvent.result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                               timehandler.stopTime();
+                               sendCmdMsg(callEvent,username);
+                           }
+                           break;
+                       case CALL_INVITE:
+                           //收到转音频事件
+                           InviteEvent inviteEvent = (InviteEvent)event;
+                           if(inviteEvent.type == EaseCallType.SINGLE_VOICE_CALL){
+                               callType = EaseCallType.SINGLE_VOICE_CALL;
+                               EaseCallKit.getInstance().setCallType(EaseCallType.SINGLE_VOICE_CALL);
+                               EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
+                               if(mRtcEngine != null){
+                                   mRtcEngine.disableVideo();
+                               }
+                               changeVideoVoiceState();
+                           }
+                           break;
+                       case CALL_CONFIRM_RING:
+                           break;
+                       case CALL_CONFIRM_CALLEE:
+                           ConfirmCallEvent confirmEvent = (ConfirmCallEvent)event;
+                           String deviceId = confirmEvent.calleeDevId;
+                           String result = confirmEvent.result;
+                           timehandler.stopTime();
+                           //收到的仲裁为自己设备
+                           if(TextUtils.equals(deviceId, EaseCallKit.deviceId)){
 
-                             //收到的仲裁为接听
-                             if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
-                                 EaseCallKit.getInstance().setCallState(EaseCallState.CALL_ANSWERED);
-                                 //加入频道
-                                 initEngineAndJoinChannel();
-                                 makeOngoingStatus();
+                               //收到的仲裁为接听
+                               if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
+                                   EaseCallKit.getInstance().setCallState(EaseCallState.CALL_ANSWERED);
+                                   //加入频道
+                                   initEngineAndJoinChannel();
+                                   makeOngoingStatus();
 
-                             }else if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
-                                 //退出通话
-                                 exitChannel();
-                             }
-                         }else{
-                             runOnUiThread(new Runnable() {
-                                 @Override
-                                 public void run() {
-                                     //提示已在其他设备处理
-                                     String info = null;
-                                     if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
-                                         //已经在其他设备接听
-                                         info = getString(R.string.The_other_is_recived);
+                               }else if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                                   //退出通话
+                                   exitChannel();
+                               }
+                           }else{
+                               runOnUiThread(new Runnable() {
+                                   @Override
+                                   public void run() {
+                                       //提示已在其他设备处理
+                                       String info = null;
+                                       if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
+                                           //已经在其他设备接听
+                                           info = getString(R.string.The_other_is_recived);
 
-                                     }else if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
-                                         //已经在其他设备拒绝
-                                         info = getString(R.string.The_other_is_refused);
-                                     }
-                                     Toast.makeText(getApplicationContext(),info , Toast.LENGTH_SHORT).show();
-                                     //退出通话
-                                     exitChannel();
+                                       }else if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_REFUSE)){
+                                           //已经在其他设备拒绝
+                                           info = getString(R.string.The_other_is_refused);
+                                       }
+                                       Toast.makeText(getApplicationContext(),info , Toast.LENGTH_SHORT).show();
+                                       //退出通话
+                                       exitChannel();
 
-                                     if(listener != null){
-                                         //已经在其他设备处理
-                                         listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonHandleOnOtherDevice,0);
-                                     }
-                                 }
-                             });
-                         }
+                                       if(listener != null){
+                                           //已经在其他设备处理
+                                           listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonHandleOnOtherDevice,0);
+                                       }
+                                   }
+                               });
+                           }
 
-                         break;
-                }
-            }
-        });
+                           break;
+                   }
+               }
+           }
+       };
+        EaseLiveDataBus.get().with(EaseCallType.SINGLE_VIDEO_CALL.toString(), BaseEvent.class).observeForever(observer);
 
         EaseLiveDataBus.get().with(EaseCallKitUtils.UPDATE_USERINFO, EaseCallUserInfo.class).observe(this, userInfo -> {
             if (userInfo != null) {
@@ -1135,6 +1141,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             }
         });
     }
+
 
     /**
      * 处理异步消息
@@ -1736,6 +1743,10 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
             leaveChannel();
             RtcEngine.destroy();
+        }
+
+        if(observer!=null) {
+            EaseLiveDataBus.get().with(EaseCallType.SINGLE_VIDEO_CALL.toString(), BaseEvent.class).removeObserver(observer);
         }
     }
 
