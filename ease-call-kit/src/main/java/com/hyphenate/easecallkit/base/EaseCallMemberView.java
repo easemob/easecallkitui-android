@@ -18,13 +18,14 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.FutureTarget;
 import com.hyphenate.easecallkit.R;
 import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
-import io.agora.rtc.models.UserInfo;
 
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
+import io.agora.rtc2.UserInfo;
 
 
 /**

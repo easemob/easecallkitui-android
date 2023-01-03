@@ -3,16 +3,17 @@ package com.hyphenate.easecallkit.ui;
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_TIMER_CALL_TIME;
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_TIMER_TIMEOUT;
-import static io.agora.rtc.Constants.CHANNEL_PROFILE_LIVE_BROADCASTING;
-import static io.agora.rtc.Constants.CLIENT_ROLE_BROADCASTER;
-import static io.agora.rtc.Constants.REMOTE_AUDIO_REASON_REMOTE_MUTED;
-import static io.agora.rtc.Constants.REMOTE_AUDIO_REASON_REMOTE_UNMUTED;
-import static io.agora.rtc.Constants.REMOTE_AUDIO_STATE_DECODING;
-import static io.agora.rtc.Constants.REMOTE_AUDIO_STATE_STOPPED;
-import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_DECODING;
-import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED;
-import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_UNMUTED;
-import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_STOPPED;
+
+import static io.agora.rtc2.Constants.CHANNEL_PROFILE_LIVE_BROADCASTING;
+import static io.agora.rtc2.Constants.CLIENT_ROLE_BROADCASTER;
+import static io.agora.rtc2.Constants.REMOTE_AUDIO_REASON_REMOTE_MUTED;
+import static io.agora.rtc2.Constants.REMOTE_AUDIO_REASON_REMOTE_UNMUTED;
+import static io.agora.rtc2.Constants.REMOTE_AUDIO_STATE_DECODING;
+import static io.agora.rtc2.Constants.REMOTE_AUDIO_STATE_STOPPED;
+import static io.agora.rtc2.Constants.REMOTE_VIDEO_STATE_PLAYING;
+import static io.agora.rtc2.Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED;
+import static io.agora.rtc2.Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_UNMUTED;
+import static io.agora.rtc2.Constants.REMOTE_VIDEO_STATE_STOPPED;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -95,12 +96,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-import io.agora.rtc.IRtcEngineEventHandler;
-import io.agora.rtc.RtcEngine;
-import io.agora.rtc.models.UserInfo;
-import io.agora.rtc.video.VideoCanvas;
-import io.agora.rtc.video.VideoEncoderConfiguration;
-
+import io.agora.rtc2.IRtcEngineEventHandler;
+import io.agora.rtc2.RtcEngine;
+import io.agora.rtc2.UserInfo;
+import io.agora.rtc2.video.VideoCanvas;
+import io.agora.rtc2.video.VideoEncoderConfiguration;
 
 
 /**
@@ -192,27 +192,6 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                     isInComingCall = false;
                 }
             }
-        }
-
-        @Override
-        public void onRejoinChannelSuccess(String channel, int uid, int elapsed) {
-            super.onRejoinChannelSuccess(channel, uid, elapsed);
-        }
-
-
-        @Override
-        public void onLeaveChannel(RtcStats stats) {
-            super.onLeaveChannel(stats);
-        }
-
-        @Override
-        public void onClientRoleChanged(int oldRole, int newRole) {
-            super.onClientRoleChanged(oldRole, newRole);
-        }
-
-        @Override
-        public void onLocalUserRegistered(int uid, String userAccount) {
-            super.onLocalUserRegistered(uid, userAccount);
         }
 
         /**
@@ -441,11 +420,11 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                     if(memberView != null){
                         if(state == REMOTE_VIDEO_STATE_STOPPED || state == REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED){
                             memberView.setVideoOff(true);
-                        }else if(state == REMOTE_VIDEO_STATE_DECODING || state == REMOTE_VIDEO_STATE_REASON_REMOTE_UNMUTED){
+                        }else if(state == REMOTE_VIDEO_STATE_PLAYING || state == REMOTE_VIDEO_STATE_REASON_REMOTE_UNMUTED){
                             memberView.setVideoOff(false);
                         }
 
-                        if(state == REMOTE_VIDEO_STATE_STOPPED|| state == REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED || state == REMOTE_VIDEO_STATE_DECODING ||state == REMOTE_VIDEO_STATE_REASON_REMOTE_UNMUTED){
+                        if(state == REMOTE_VIDEO_STATE_STOPPED|| state == REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED || state == REMOTE_VIDEO_STATE_PLAYING ||state == REMOTE_VIDEO_STATE_REASON_REMOTE_UNMUTED){
                             //判断视频是当前悬浮窗 更新悬浮窗
                             EaseCallMemberView floatView = EaseCallFloatWindow.getInstance().getCallMemberView();
                             if(floatView != null && floatView.getUserId() == uid){
