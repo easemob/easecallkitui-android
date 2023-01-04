@@ -603,13 +603,12 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             if(config != null){
                 agoraAppId = config.getAgoraAppId();
             }
-            mRtcEngine = RtcEngine.create(getBaseContext(), agoraAppId, mRtcEventHandler);
+            mRtcEngine = RtcEngine.create(getApplicationContext(), agoraAppId, mRtcEventHandler);
 
             //因为有小程序 设置为直播模式 角色设置为主播
             mRtcEngine.setChannelProfile(CHANNEL_PROFILE_LIVE_BROADCASTING);
             mRtcEngine.setClientRole(CLIENT_ROLE_BROADCASTER);
 
-            EaseCallFloatWindow.getInstance().setRtcEngine(getApplicationContext(), mRtcEngine);
             //设置小窗口悬浮类型
             EaseCallFloatWindow.getInstance().setCallType(EaseCallType.CONFERENCE_CALL);
         } catch (Exception e) {
@@ -1519,6 +1518,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             Log.e(TAG, "timeUpdataTimer cost seconds: "+timeUpdataTimer.timePassed);
             EaseCallFloatWindow.getInstance().setCostSeconds(timeUpdataTimer.timePassed);
         }
+        EaseCallFloatWindow.getInstance().setRtcEngine(getApplicationContext(), mRtcEngine);
         EaseCallFloatWindow.getInstance().show();
         setConferenceInfoAfterShowFloat();
         int uid = 0;

@@ -240,6 +240,7 @@ public class EaseCallFloatWindow {
     private void stopCount() {
         if(chronometer != null) {
             chronometer.stop();
+            chronometer = null;
         }
     }
 
@@ -370,12 +371,14 @@ public class EaseCallFloatWindow {
         floatView = null;
         memberView = null;
         surfaceView = null;
+        avatarView = null;
         if(conferenceInfo != null) {
             conferenceInfo = null;
         }
         if(singleCallInfo != null) {
             singleCallInfo = null;
         }
+        rtcEngine = null;
     }
 
     /**
