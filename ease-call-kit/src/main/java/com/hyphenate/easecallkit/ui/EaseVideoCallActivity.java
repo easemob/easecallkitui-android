@@ -1,10 +1,11 @@
 package com.hyphenate.easecallkit.ui;
 
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
-import static io.agora.rtc.Constants.CHANNEL_PROFILE_LIVE_BROADCASTING;
-import static io.agora.rtc.Constants.CLIENT_ROLE_BROADCASTER;
-import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED;
-import static io.agora.rtc.Constants.REMOTE_VIDEO_STATE_STOPPED;
+
+import static io.agora.rtc2.Constants.CHANNEL_PROFILE_LIVE_BROADCASTING;
+import static io.agora.rtc2.Constants.CLIENT_ROLE_BROADCASTER;
+import static io.agora.rtc2.Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED;
+import static io.agora.rtc2.Constants.REMOTE_VIDEO_STATE_STOPPED;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -93,11 +94,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import io.agora.rtc.IRtcEngineEventHandler;
-import io.agora.rtc.RtcEngine;
-import io.agora.rtc.models.UserInfo;
-import io.agora.rtc.video.VideoCanvas;
-import io.agora.rtc.video.VideoEncoderConfiguration;
+import io.agora.rtc2.IRtcEngineEventHandler;
+import io.agora.rtc2.RtcEngine;
+import io.agora.rtc2.UserInfo;
+import io.agora.rtc2.video.VideoCanvas;
+import io.agora.rtc2.video.VideoEncoderConfiguration;
 
 
 /**
@@ -229,32 +230,6 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                     }
                 }
             });
-        }
-
-        @Override
-        public void onRejoinChannelSuccess(String channel, int uid, int elapsed) {
-            super.onRejoinChannelSuccess(channel, uid, elapsed);
-        }
-
-
-        @Override
-        public void onLeaveChannel(RtcStats stats) {
-            super.onLeaveChannel(stats);
-        }
-
-        @Override
-        public void onClientRoleChanged(int oldRole, int newRole) {
-            super.onClientRoleChanged(oldRole, newRole);
-        }
-
-        @Override
-        public void onLocalUserRegistered(int uid, String userAccount) {
-            super.onLocalUserRegistered(uid, userAccount);
-        }
-
-        @Override
-        public void onUserInfoUpdated(int uid, UserInfo userInfo) {
-            super.onUserInfoUpdated(uid, userInfo);
         }
 
         @Override
@@ -528,7 +503,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             Uri ringUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
             audioManager.setMode(AudioManager.MODE_RINGTONE);
             if(ringUri != null){
-                ringtone = RingtoneManager.getRingtone(this, ringUri);
+                ringtone = RingtoneManager.getRingtone(getApplicationContext(), ringUri);
             }
             AudioManager am = (AudioManager)this.getApplication().getSystemService(Context.AUDIO_SERVICE);
             int ringerMode = am.getRingerMode();
@@ -641,12 +616,10 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             if(config != null){
                 agoraAppId = config.getAgoraAppId();
             }
-            mRtcEngine = RtcEngine.create(getBaseContext(), agoraAppId, mRtcEventHandler);
+            mRtcEngine = RtcEngine.create(getApplicationContext(), agoraAppId, mRtcEventHandler);
             //因为有小程序 设置为直播模式 角色设置为主播
             mRtcEngine.setChannelProfile(CHANNEL_PROFILE_LIVE_BROADCASTING);
             mRtcEngine.setClientRole(CLIENT_ROLE_BROADCASTER);
-
-            EaseCallFloatWindow.getInstance().setRtcEngine(getApplicationContext(), mRtcEngine);
         } catch (Exception e) {
             EMLog.e(TAG, Log.getStackTraceString(e));
             throw new RuntimeException("NEED TO check rtc sdk init fatal error\n" + Log.getStackTraceString(e));
@@ -1555,6 +1528,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         if(chronometer != null) {
             EaseCallFloatWindow.getInstance().setCostSeconds(chronometer.getCostSeconds());
         }
+        EaseCallFloatWindow.getInstance().setRtcEngine(getApplicationContext(), mRtcEngine);
         EaseCallFloatWindow.getInstance().show();
         boolean surface = true;
         if(isInComingCall && EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_ANSWERED){
