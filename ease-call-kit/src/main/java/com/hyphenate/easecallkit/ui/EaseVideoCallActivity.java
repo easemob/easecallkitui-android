@@ -740,6 +740,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             stopCount();
             if(remoteUId == 0){
                 CallCancelEvent cancelEvent = new CallCancelEvent();
+                cancelEvent.callId = EaseCallKit.getInstance().getCallID();
                 sendCmdMsg(cancelEvent,username);
             }else{
                 exitChannel();
