@@ -1,7 +1,12 @@
 package com.hyphenate.easecallkit;
 
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
+import static com.hyphenate.easecallkit.utils.EaseCallKitUtils.isAppRunningForeground;
+import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
+
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -10,6 +15,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
 
 import com.hyphenate.EMCallBack;
 import com.hyphenate.EMMessageListener;
@@ -34,28 +41,40 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import com.hyphenate.easecallkit.base.EaseCallInfo;
 import com.hyphenate.easecallkit.base.EaseCallKitConfig;
+import com.hyphenate.easecallkit.base.EaseCallKitListener;
+import com.hyphenate.easecallkit.base.EaseCallType;
 import com.hyphenate.easecallkit.event.AlertEvent;
 import com.hyphenate.easecallkit.event.AnswerEvent;
 import com.hyphenate.easecallkit.event.BaseEvent;
 import com.hyphenate.easecallkit.event.CallCancelEvent;
 import com.hyphenate.easecallkit.event.ConfirmCallEvent;
-import com.hyphenate.easecallkit.base.EaseCallInfo;
+import com.hyphenate.easecallkit.event.ConfirmRingEvent;
 import com.hyphenate.easecallkit.event.InviteEvent;
 import com.hyphenate.easecallkit.livedatas.EaseLiveDataBus;
+import com.hyphenate.easecallkit.ui.EaseBaseCallActivity;
 import com.hyphenate.easecallkit.ui.EaseMultipleVideoActivity;
 import com.hyphenate.easecallkit.ui.EaseVideoCallActivity;
 import com.hyphenate.easecallkit.utils.EaseCallAction;
-import com.hyphenate.easecallkit.base.EaseCallKitListener;
-import com.hyphenate.easecallkit.base.EaseCallType;
 import com.hyphenate.easecallkit.utils.EaseCallKitNotifier;
+import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
 import com.hyphenate.easecallkit.utils.EaseCallState;
 import com.hyphenate.easecallkit.utils.EaseMsgUtils;
-import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
+import com.hyphenate.exceptions.HyphenateException;
+import com.hyphenate.util.EMLog;
+import com.hyphenate.util.EasyUtils;
 
-import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
-import static com.hyphenate.easecallkit.utils.EaseCallKitUtils.isAppRunningForeground;
-import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
+import org.json.JSONObject;
+
+import java.lang.reflect.Method;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 
 /**
@@ -770,8 +789,9 @@ public class EaseCallKit {
                     //呼叫超时
                     timeHandler.stopTime();
                     callState = EaseCallState.CALL_IDLE;
+                }else{
+                    sendEmptyMessageDelayed(MSG_TIMER, 1000);
                 }
-                sendEmptyMessageDelayed(MSG_TIMER, 1000);
             }else if(msg.what == MSG_START_ACTIVITY){
                 timeHandler.stopTime();
                 String info = "";
