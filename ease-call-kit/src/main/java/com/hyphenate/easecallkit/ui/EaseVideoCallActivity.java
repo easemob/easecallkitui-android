@@ -42,6 +42,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.Group;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -181,6 +182,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
     protected EaseCallType callType;
     private View Voice_View;
     private TimeHandler timehandler;
+    private final InComingCallHandler inCommingCallHandler = new InComingCallHandler();
 
     private RtcEngine mRtcEngine;
     private boolean isMuteVideo = false;
@@ -194,6 +196,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
     //加入频道Uid Map
     private Map<Integer, EaseUserAccount> uIdMap = new HashMap<>();
     EaseCallKitListener listener = EaseCallKit.getInstance().getCallListener();
+    private String callId;
 
     private final IRtcEngineEventHandler mRtcEventHandler = new IRtcEngineEventHandler() {
         @Override
@@ -203,6 +206,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             if(listener != null){
                 listener.onCallError(EaseCallKit.EaseCallError.RTC_ERROR,err,"rtc error");
             }
+            inCommingCallHandler.stopTime();
         }
 
         @Override
@@ -227,6 +231,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                         //开始定时器
                         timehandler.startTime();
                     }
+                    inCommingCallHandler.stopTime();
                 }
             });
         }
@@ -366,7 +371,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         }else{
             initParams(savedInstanceState);
         }
-
+        callId=EaseCallKit.getInstance().getCallID();
         //Init View
         initView();
         checkFloatIntent(getIntent());
@@ -381,7 +386,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         }
 
         timehandler = new TimeHandler();
-
+        if(isInComingCall) {
+            inCommingCallHandler.startTime();
+        }
         EaseCallKit.getInstance().getNotifier().reset();
     }
 
@@ -746,6 +753,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 event.calleeDevId = EaseCallKit.deviceId;
                 sendCmdMsg(event,username);
             }
+            exitChannel();
         } else if (id == R.id.btn_answer_call) {
             if(isInComingCall){
                 stopPlayRing();
@@ -1223,9 +1231,8 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         }
         message.setAttribute("em_apns_ext", extObject);
 
-        if(EaseCallKit.getInstance().getCallID() == null){
-            EaseCallKit.getInstance().setCallID(EaseCallKitUtils.getRandomString(10));
-        }
+        EaseCallKit.getInstance().setCallID(EaseCallKitUtils.getRandomString(10));
+        callId=EaseCallKit.getInstance().getCallID();
         message.setAttribute(EaseMsgUtils.CLL_ID, EaseCallKit.getInstance().getCallID());
 
         message.setAttribute(EaseMsgUtils.CLL_TIMESTRAMEP, System.currentTimeMillis());
@@ -1339,6 +1346,47 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
             }
         });
+    }
+
+    private class InComingCallHandler extends Handler {
+        private int timePassed = 0;
+        private final int MSG_TIMER = 1;
+
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            if (msg.what == MSG_TIMER) {
+                timePassed++;
+                Log.e("TAG", "incomming call timePassed: " + timePassed);
+                long intervalTime;
+                EaseCallKitConfig callKitConfig = EaseCallKit.getInstance().getCallKitConfig();
+                if (callKitConfig != null) {
+                    intervalTime = callKitConfig.getCallTimeOut();
+                } else {
+                    intervalTime = EaseMsgUtils.CALL_INVITE_INTERVAL;
+                }
+                if (timePassed * 1000 == intervalTime) {
+                    //被呼叫超时
+                    stopTime();
+                    exitChannel();
+                    if (listener != null) {
+                        //对方接通超时
+                        listener.onEndCallWithReason(callType, channelName, EaseCallEndReason.EaseCallEndReasonNoResponse, 0);
+                    }
+                } else {
+                    sendEmptyMessageDelayed(MSG_TIMER, 1000);
+                }
+            }
+        }
+
+        public void startTime() {
+            timePassed = 0;
+            removeMessages(MSG_TIMER);
+            sendEmptyMessageDelayed(MSG_TIMER, 1000);
+        }
+
+        public void stopTime() {
+            removeMessages(MSG_TIMER, 1000);
+        }
     }
 
     private class TimeHandler extends Handler {
@@ -1722,6 +1770,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
      */
     protected void releaseHandler() {
         handler.sendEmptyMessage(EaseMsgUtils.MSG_RELEASE_HANDLER);
+        inCommingCallHandler.removeCallbacksAndMessages(null);
     }
 
     @Override
@@ -1816,7 +1865,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
     @Override
     protected void onStop() {
         super.onStop();
-        if(EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_IDLE){
+        if(EaseCallKit.getInstance().getCallState() != EaseCallState.CALL_IDLE&&TextUtils.equals(callId,EaseCallKit.getInstance().getCallID())){//排除上一次callId的干扰
             showFloatWindow();
         }
     }
