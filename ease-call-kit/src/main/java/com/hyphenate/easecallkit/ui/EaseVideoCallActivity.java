@@ -1379,7 +1379,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         }
 
         public void stopTime() {
-            removeMessages(MSG_TIMER, 1000);
+            removeMessages(MSG_TIMER);
         }
     }
 
