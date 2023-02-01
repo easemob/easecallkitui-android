@@ -846,6 +846,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             }else{
                 //发送转音频信息
                 VideoToVoiceeEvent event = new VideoToVoiceeEvent();
+                event.callId = EaseCallKit.getInstance().getCallID();
                 sendCmdMsg(event,username);
             }
         }
