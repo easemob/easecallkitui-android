@@ -959,6 +959,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 event.calleeDevId = EaseCallKit.deviceId;
                 sendCmdMsg(event,username);
             }
+            exitChannel();
         }
     };
 
