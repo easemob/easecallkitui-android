@@ -23,17 +23,16 @@ import com.hyphenate.easecallkit.EaseCallKit;
 import com.hyphenate.easecallkit.R;
 import com.hyphenate.easecallkit.ui.EaseBaseCallActivity;
 import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
-import io.agora.rtc.RtcEngine;
-import io.agora.rtc.models.UserInfo;
-import io.agora.rtc.video.VideoCanvas;
 
 import com.hyphenate.easecallkit.widget.MyChronometer;
 import com.hyphenate.util.EMLog;
 
-import java.util.List;
 import java.util.Map;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
+
+import io.agora.rtc2.RtcEngine;
+import io.agora.rtc2.video.VideoCanvas;
 
 
 /**
@@ -241,6 +240,7 @@ public class EaseCallFloatWindow {
     private void stopCount() {
         if(chronometer != null) {
             chronometer.stop();
+            chronometer = null;
         }
     }
 
@@ -371,12 +371,14 @@ public class EaseCallFloatWindow {
         floatView = null;
         memberView = null;
         surfaceView = null;
+        avatarView = null;
         if(conferenceInfo != null) {
             conferenceInfo = null;
         }
         if(singleCallInfo != null) {
             singleCallInfo = null;
         }
+        rtcEngine = null;
     }
 
     /**

@@ -1,7 +1,10 @@
 package com.hyphenate.easecallkit;
 
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
+import static com.hyphenate.easecallkit.utils.EaseCallKitUtils.isAppRunningForeground;
+import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
+
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
@@ -14,15 +17,37 @@ import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 
+import androidx.annotation.RequiresApi;
+
 import com.hyphenate.EMCallBack;
 import com.hyphenate.EMMessageListener;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMCmdMessageBody;
 import com.hyphenate.chat.EMConversation;
+import com.hyphenate.chat.EMGroupReadAck;
 import com.hyphenate.chat.EMMessage;
+import com.hyphenate.chat.EMMessageReactionChange;
 import com.hyphenate.easecallkit.base.EaseCallFloatWindow;
+import com.hyphenate.easecallkit.base.EaseCallInfo;
+import com.hyphenate.easecallkit.base.EaseCallKitConfig;
+import com.hyphenate.easecallkit.base.EaseCallKitListener;
+import com.hyphenate.easecallkit.base.EaseCallType;
+import com.hyphenate.easecallkit.event.AlertEvent;
+import com.hyphenate.easecallkit.event.AnswerEvent;
+import com.hyphenate.easecallkit.event.BaseEvent;
+import com.hyphenate.easecallkit.event.CallCancelEvent;
+import com.hyphenate.easecallkit.event.ConfirmCallEvent;
 import com.hyphenate.easecallkit.event.ConfirmRingEvent;
+import com.hyphenate.easecallkit.event.InviteEvent;
+import com.hyphenate.easecallkit.livedatas.EaseLiveDataBus;
 import com.hyphenate.easecallkit.ui.EaseBaseCallActivity;
+import com.hyphenate.easecallkit.ui.EaseMultipleVideoActivity;
+import com.hyphenate.easecallkit.ui.EaseVideoCallActivity;
+import com.hyphenate.easecallkit.utils.EaseCallAction;
+import com.hyphenate.easecallkit.utils.EaseCallKitNotifier;
+import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
+import com.hyphenate.easecallkit.utils.EaseCallState;
+import com.hyphenate.easecallkit.utils.EaseMsgUtils;
 import com.hyphenate.exceptions.HyphenateException;
 import com.hyphenate.util.EMLog;
 import com.hyphenate.util.EasyUtils;
@@ -37,31 +62,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-
-import com.hyphenate.easecallkit.base.EaseCallKitConfig;
-import com.hyphenate.easecallkit.event.AlertEvent;
-import com.hyphenate.easecallkit.event.AnswerEvent;
-import com.hyphenate.easecallkit.event.BaseEvent;
-import com.hyphenate.easecallkit.event.CallCancelEvent;
-import com.hyphenate.easecallkit.event.ConfirmCallEvent;
-import com.hyphenate.easecallkit.base.EaseCallInfo;
-import com.hyphenate.easecallkit.event.InviteEvent;
-import com.hyphenate.easecallkit.livedatas.EaseLiveDataBus;
-import com.hyphenate.easecallkit.ui.EaseMultipleVideoActivity;
-import com.hyphenate.easecallkit.ui.EaseVideoCallActivity;
-import com.hyphenate.easecallkit.utils.EaseCallAction;
-import com.hyphenate.easecallkit.base.EaseCallKitListener;
-import com.hyphenate.easecallkit.base.EaseCallType;
-import com.hyphenate.easecallkit.utils.EaseCallKitNotifier;
-import com.hyphenate.easecallkit.utils.EaseCallState;
-import com.hyphenate.easecallkit.utils.EaseMsgUtils;
-import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
-
-import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
-import static com.hyphenate.easecallkit.utils.EaseCallKitUtils.isAppRunningForeground;
-import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
-
-import androidx.annotation.RequiresApi;
 
 
 /**
@@ -584,24 +584,25 @@ public class EaseCallKit {
             }
 
             @Override
-            public void onMessageRead(List<EMMessage> messages) {
-
-            }
+            public void onMessageRead(List<EMMessage> messages) {}
 
             @Override
-            public void onMessageDelivered(List<EMMessage> messages) {
-
-            }
+            public void onGroupMessageRead(List<EMGroupReadAck> groupReadAcks) {}
 
             @Override
-            public void onMessageRecalled(List<EMMessage> messages) {
-
-            }
+            public void onMessageDelivered(List<EMMessage> messages) {}
 
             @Override
-            public void onMessageChanged(EMMessage message, Object change) {
+            public void onMessageRecalled(List<EMMessage> messages) {}
 
-            }
+            @Override
+            public void onMessageChanged(EMMessage message, Object change) {}
+
+            @Override
+            public void onReadAckForGroupMessageUpdated() {}
+
+            @Override
+            public void onReactionChanged(List<EMMessageReactionChange> messageReactionChangeList) {}
         };
         //增加消息监听
         EMClient.getInstance().chatManager().addMessageListener(this.messageListener);
@@ -798,8 +799,9 @@ public class EaseCallKit {
                     //呼叫超时
                     timeHandler.stopTime();
                     callState = EaseCallState.CALL_IDLE;
+                }else{
+                    sendEmptyMessageDelayed(MSG_TIMER, 1000);
                 }
-                sendEmptyMessageDelayed(MSG_TIMER, 1000);
             }else if(msg.what == MSG_START_ACTIVITY){
                 timeHandler.stopTime();
                 String info = "";
