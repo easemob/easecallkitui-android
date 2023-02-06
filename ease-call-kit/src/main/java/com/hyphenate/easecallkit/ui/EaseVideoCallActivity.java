@@ -240,6 +240,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         @Override
         public void onUserJoined(int uid, int elapsed) {
             super.onUserJoined(uid, elapsed);
+            EMLog.d(TAG, "onUserJoined uid: "+uid + " elapsed: "+elapsed);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -260,6 +261,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
         @Override
         public void onUserOffline(int uid, int reason) {
+            EMLog.d(TAG, "onUserOffline uid: "+uid + " reason: "+reason);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -308,6 +310,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
         @Override
         public void onRemoteVideoStateChanged(int uid, int state, int reason, int elapsed) {
+            EMLog.d(TAG, "onRemoteVideoStateChanged uid: "+uid + " state: "+state + " reason: "+reason+ " elapsed: "+elapsed);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -748,6 +751,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             stopCount();
             if(remoteUId == 0){
                 CallCancelEvent cancelEvent = new CallCancelEvent();
+                cancelEvent.callId = EaseCallKit.getInstance().getCallID();
                 sendCmdMsg(cancelEvent,username);
             }else{
                 exitChannel();
@@ -842,6 +846,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             }else{
                 //发送转音频信息
                 VideoToVoiceeEvent event = new VideoToVoiceeEvent();
+                event.callId = EaseCallKit.getInstance().getCallID();
                 sendCmdMsg(event,username);
             }
         }

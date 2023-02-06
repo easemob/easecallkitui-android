@@ -722,7 +722,9 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 mRtcEngine.switchCamera();
             }
             this.isCameraFront = isFront;
-            localMemberView.setCameraDirectionFront(isFront);
+            if(localMemberView != null) {
+                localMemberView.setCameraDirectionFront(isFront);
+            }
         }
     }
 
@@ -959,6 +961,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 event.calleeDevId = EaseCallKit.deviceId;
                 sendCmdMsg(event,username);
             }
+            exitChannel();
         }
     };
 

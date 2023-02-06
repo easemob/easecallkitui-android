@@ -24,7 +24,9 @@ import com.hyphenate.EMMessageListener;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMCmdMessageBody;
 import com.hyphenate.chat.EMConversation;
+import com.hyphenate.chat.EMGroupReadAck;
 import com.hyphenate.chat.EMMessage;
+import com.hyphenate.chat.EMMessageReactionChange;
 import com.hyphenate.easecallkit.base.EaseCallFloatWindow;
 import com.hyphenate.easecallkit.base.EaseCallInfo;
 import com.hyphenate.easecallkit.base.EaseCallKitConfig;
@@ -582,24 +584,25 @@ public class EaseCallKit {
             }
 
             @Override
-            public void onMessageRead(List<EMMessage> messages) {
-
-            }
+            public void onMessageRead(List<EMMessage> messages) {}
 
             @Override
-            public void onMessageDelivered(List<EMMessage> messages) {
-
-            }
+            public void onGroupMessageRead(List<EMGroupReadAck> groupReadAcks) {}
 
             @Override
-            public void onMessageRecalled(List<EMMessage> messages) {
-
-            }
+            public void onMessageDelivered(List<EMMessage> messages) {}
 
             @Override
-            public void onMessageChanged(EMMessage message, Object change) {
+            public void onMessageRecalled(List<EMMessage> messages) {}
 
-            }
+            @Override
+            public void onMessageChanged(EMMessage message, Object change) {}
+
+            @Override
+            public void onReadAckForGroupMessageUpdated() {}
+
+            @Override
+            public void onReactionChanged(List<EMMessageReactionChange> messageReactionChangeList) {}
         };
         //增加消息监听
         EMClient.getInstance().chatManager().addMessageListener(this.messageListener);
