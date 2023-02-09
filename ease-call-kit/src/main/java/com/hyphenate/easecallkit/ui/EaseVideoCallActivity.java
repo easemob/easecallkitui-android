@@ -754,13 +754,13 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 cancelEvent.callId = EaseCallKit.getInstance().getCallID();
                 sendCmdMsg(cancelEvent,username);
             }else{
-                exitChannel();
                 if(listener != null){
                     //通话结束原因挂断
                     long time = getChronometerSeconds(chronometer);
                     listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonHangup,time *1000);
                 }
             }
+            exitChannel();
         } else if(id == R.id.local_surface_layout){
             changeSurface();
         } else if(id == R.id.btn_call_float){
