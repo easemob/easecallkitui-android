@@ -1190,24 +1190,24 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         }
 
         //增加推送字段
-        JSONObject extObject = new JSONObject();
-        try {
-            EaseCallType type = EaseCallKit.getInstance().getCallType();
-            if(type == EaseCallType.SINGLE_VOICE_CALL){
-                String info = getApplication().getString(R.string.alert_request_voice, EMClient.getInstance().getCurrentUser());
-                extObject.putOpt("em_push_title",info);
-                extObject.putOpt("em_push_content",info);
-            }else{
-                String info = getApplication().getString(R.string.alert_request_video, EMClient.getInstance().getCurrentUser());
-                extObject.putOpt("em_push_title",info);
-                extObject.putOpt("em_push_content",info);
-            }
-            extObject.putOpt("isRtcCall",true);
-            extObject.putOpt("callType",type.code);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        message.setAttribute("em_apns_ext", extObject);
+//        JSONObject extObject = new JSONObject();
+//        try {
+//            EaseCallType type = EaseCallKit.getInstance().getCallType();
+//            if(type == EaseCallType.SINGLE_VOICE_CALL){
+//                String info = getApplication().getString(R.string.alert_request_voice, EMClient.getInstance().getCurrentUser());
+//                extObject.putOpt("em_push_title",info);
+//                extObject.putOpt("em_push_content",info);
+//            }else{
+//                String info = getApplication().getString(R.string.alert_request_video, EMClient.getInstance().getCurrentUser());
+//                extObject.putOpt("em_push_title",info);
+//                extObject.putOpt("em_push_content",info);
+//            }
+//            extObject.putOpt("isRtcCall",true);
+//            extObject.putOpt("callType",type.code);
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//        message.setAttribute("em_apns_ext", extObject);
 
         EaseCallKit.getInstance().setCallID(EaseCallKitUtils.getRandomString(10));
         callId=EaseCallKit.getInstance().getCallID();
