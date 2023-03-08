@@ -282,6 +282,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
         @Override
         public void onFirstRemoteVideoDecoded(final int uid, int width, int height, int elapsed) {
+            EMLog.d(TAG, "onFirstRemoteVideoDecoded uid: "+uid + " elapsed: "+elapsed + " width: "+width+" height: "+height);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -296,6 +297,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         /** @deprecated */
         @Deprecated
         public void onFirstRemoteAudioFrame(int uid, int elapsed) {
+            EMLog.d(TAG, "onFirstRemoteAudioFrame uid: "+uid + " elapsed: "+elapsed);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
