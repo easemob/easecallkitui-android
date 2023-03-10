@@ -1,7 +1,6 @@
 package com.hyphenate.easecallkit.ui;
 
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
-
 import static io.agora.rtc2.Constants.CHANNEL_PROFILE_LIVE_BROADCASTING;
 import static io.agora.rtc2.Constants.CLIENT_ROLE_BROADCASTER;
 import static io.agora.rtc2.Constants.REMOTE_VIDEO_STATE_REASON_REMOTE_MUTED;
@@ -97,7 +96,6 @@ import java.util.TimeZone;
 
 import io.agora.rtc2.IRtcEngineEventHandler;
 import io.agora.rtc2.RtcEngine;
-import io.agora.rtc2.UserInfo;
 import io.agora.rtc2.video.VideoCanvas;
 import io.agora.rtc2.video.VideoEncoderConfiguration;
 
@@ -816,7 +814,6 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             EaseCallKit.getInstance().setCallType(EaseCallType.SINGLE_VOICE_CALL);
             EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
             if(mRtcEngine != null){
-                mRtcEngine.disableVideo();
                 mRtcEngine.muteLocalVideoStream(true);
             }
             localSurface_layout.setVisibility(View.GONE);
