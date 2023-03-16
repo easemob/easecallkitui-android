@@ -280,6 +280,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
         @Override
         public void onFirstRemoteVideoDecoded(final int uid, int width, int height, int elapsed) {
+            EMLog.d(TAG, "onFirstRemoteVideoDecoded uid: "+uid + " elapsed: "+elapsed + " width: "+width+" height: "+height);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -294,6 +295,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         /** @deprecated */
         @Deprecated
         public void onFirstRemoteAudioFrame(int uid, int elapsed) {
+            EMLog.d(TAG, "onFirstRemoteAudioFrame uid: "+uid + " elapsed: "+elapsed);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -752,13 +754,13 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 cancelEvent.callId = EaseCallKit.getInstance().getCallID();
                 sendCmdMsg(cancelEvent,username);
             }else{
-                exitChannel();
                 if(listener != null){
                     //通话结束原因挂断
                     long time = getChronometerSeconds(chronometer);
                     listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonHangup,time *1000);
                 }
             }
+            exitChannel();
         } else if(id == R.id.local_surface_layout){
             changeSurface();
         } else if(id == R.id.btn_call_float){
@@ -1187,24 +1189,24 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         }
 
         //增加推送字段
-        JSONObject extObject = new JSONObject();
-        try {
-            EaseCallType type = EaseCallKit.getInstance().getCallType();
-            if(type == EaseCallType.SINGLE_VOICE_CALL){
-                String info = getApplication().getString(R.string.alert_request_voice, EMClient.getInstance().getCurrentUser());
-                extObject.putOpt("em_push_title",info);
-                extObject.putOpt("em_push_content",info);
-            }else{
-                String info = getApplication().getString(R.string.alert_request_video, EMClient.getInstance().getCurrentUser());
-                extObject.putOpt("em_push_title",info);
-                extObject.putOpt("em_push_content",info);
-            }
-            extObject.putOpt("isRtcCall",true);
-            extObject.putOpt("callType",type.code);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        message.setAttribute("em_apns_ext", extObject);
+//        JSONObject extObject = new JSONObject();
+//        try {
+//            EaseCallType type = EaseCallKit.getInstance().getCallType();
+//            if(type == EaseCallType.SINGLE_VOICE_CALL){
+//                String info = getApplication().getString(R.string.alert_request_voice, EMClient.getInstance().getCurrentUser());
+//                extObject.putOpt("em_push_title",info);
+//                extObject.putOpt("em_push_content",info);
+//            }else{
+//                String info = getApplication().getString(R.string.alert_request_video, EMClient.getInstance().getCurrentUser());
+//                extObject.putOpt("em_push_title",info);
+//                extObject.putOpt("em_push_content",info);
+//            }
+//            extObject.putOpt("isRtcCall",true);
+//            extObject.putOpt("callType",type.code);
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//        message.setAttribute("em_apns_ext", extObject);
 
         EaseCallKit.getInstance().setCallID(EaseCallKitUtils.getRandomString(10));
         callId=EaseCallKit.getInstance().getCallID();
