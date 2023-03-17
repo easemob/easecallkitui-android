@@ -1213,17 +1213,17 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 message.setAttribute(EaseMsgUtils.CALL_MSG_TYPE, EaseMsgUtils.CALL_MSG_INFO);
 
                 //增加推送字段
-                JSONObject extObject = new JSONObject();
-                try {
-                    String info = getApplication().getString(R.string.alert_request_multiple_video, EMClient.getInstance().getCurrentUser());
-                    extObject.putOpt("em_push_title", info);
-                    extObject.putOpt("em_push_content", info);
-                    extObject.putOpt("isRtcCall", true);
-                    extObject.putOpt("callType", EaseCallType.CONFERENCE_CALL.code);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                message.setAttribute("em_apns_ext", extObject);
+//                JSONObject extObject = new JSONObject();
+//                try {
+//                    String info = getApplication().getString(R.string.alert_request_multiple_video, EMClient.getInstance().getCurrentUser());
+//                    extObject.putOpt("em_push_title", info);
+//                    extObject.putOpt("em_push_content", info);
+//                    extObject.putOpt("isRtcCall", true);
+//                    extObject.putOpt("callType", EaseCallType.CONFERENCE_CALL.code);
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+//                message.setAttribute("em_apns_ext", extObject);
 
                 final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
                 message.setMessageStatusCallback(new EMCallBack() {
