@@ -80,7 +80,6 @@ import com.hyphenate.easecallkit.widget.EaseImageView;
 import com.hyphenate.easecallkit.widget.MyChronometer;
 import com.hyphenate.util.EMLog;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -701,6 +700,14 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                     exitChannel();
                 }
             });
+        }else{
+            String token=null;
+            int uId=0;
+            EMLog.d(TAG,"onSetToken token=" + token + " uid=" +uId);
+            //获取到Token uid加入频道
+            mRtcEngine.joinChannel(token, channelName,null,uId);
+            //自己信息加入uIdMap
+            uIdMap.put(uId,new EaseUserAccount(uId,EMClient.getInstance().getCurrentUser()));
         }
     }
 
