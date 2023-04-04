@@ -703,7 +703,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         }else{
             String token=null;
             int uId=0;
-            EMLog.d(TAG,"onSetToken token=" + token + " uid=" +uId);
+            EMLog.e(TAG,"onSetToken token=" + token + " uid=" +uId);
             //获取到Token uid加入频道
             mRtcEngine.joinChannel(token, channelName,null,uId);
             //自己信息加入uIdMap
