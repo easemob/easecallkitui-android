@@ -1503,7 +1503,8 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 //重置状态
                 EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDLE);
                 EaseCallKit.getInstance().setCallID(null);
-
+                //关闭自己
+                finish();
                 makeMainTaskFront();
             }
         });
