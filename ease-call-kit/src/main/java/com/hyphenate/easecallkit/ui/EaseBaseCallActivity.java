@@ -52,4 +52,7 @@ public class EaseBaseCallActivity extends AppCompatActivity {
     }
 
     public void doShowFloatWindow() {}
+
+    public void makeMainTaskFront(){
+    }
 }

@@ -80,7 +80,6 @@ import com.hyphenate.easecallkit.widget.EaseImageView;
 import com.hyphenate.easecallkit.widget.MyChronometer;
 import com.hyphenate.util.EMLog;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -1629,8 +1628,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                     stopPlayRing();
                 }
                 isOngoingCall = false;
-
-                finish();
+                makeMainTaskFront();
             }
         });
     }
