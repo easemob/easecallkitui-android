@@ -286,6 +286,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                     remoteUId = uid;
                     if(callType == EaseCallType.SINGLE_VIDEO_CALL){
                         setupRemoteVideo(uid);
+                        if (isFloatWindowShowing()) {
+                            EaseCallFloatWindow.getInstance().update(!changeFlag, 0, remoteUId, true);
+                        }
                     }
                 }
             });
@@ -1597,8 +1600,6 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         EaseCallFloatWindow.getInstance().setCameraDirection(isCameraFront, changeFlag);
         moveTaskToBack(false);
     }
-
-
 
     /**
      * 开启扬声器
