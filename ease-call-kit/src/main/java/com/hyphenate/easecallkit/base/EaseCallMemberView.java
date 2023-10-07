@@ -19,12 +19,6 @@ import com.bumptech.glide.request.FutureTarget;
 import com.hyphenate.easecallkit.R;
 import com.hyphenate.easecallkit.utils.EaseCallKitUtils;
 
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
 import io.agora.rtc2.UserInfo;
 
 
@@ -54,7 +48,6 @@ public class EaseCallMemberView extends RelativeLayout {
     private String streamId;
     private Bitmap headBitMap;
     private String headUrl;
-    private EaseCallMemberView memberView;
     private LinearLayout loading_dialog;
     private boolean speakActivated;
     private boolean isCameraFront;

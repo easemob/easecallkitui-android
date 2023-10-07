@@ -164,7 +164,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
     volatile private boolean mConfirm_ring = false;
     private String tokenUrl;
     private int remoteUId = 0;
-    private boolean changeFlag = true;
+    private boolean changeFlag = false;
     boolean transVoice = false;
     private String headUrl = null;
     private Bitmap headBitMap;
@@ -286,6 +286,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                     remoteUId = uid;
                     if(callType == EaseCallType.SINGLE_VIDEO_CALL){
                         setupRemoteVideo(uid);
+                        if (isFloatWindowShowing()) {
+                            EaseCallFloatWindow.getInstance().update(false, 0, remoteUId, true);
+                        }
                     }
                 }
             });
@@ -1596,9 +1599,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         EaseCallFloatWindow.getInstance().update(!changeFlag,0, remoteUId,surface);
         EaseCallFloatWindow.getInstance().setCameraDirection(isCameraFront, changeFlag);
         moveTaskToBack(false);
+        //解决需要点击两次的问题
+        EaseCallFloatWindow.getInstance().getFloatView().requestFocus();
     }
-
-
 
     /**
      * 开启扬声器
