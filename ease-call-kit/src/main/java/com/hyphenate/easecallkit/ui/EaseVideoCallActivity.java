@@ -1636,8 +1636,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                     stopPlayRing();
                 }
                 isOngoingCall = false;
-
+                //关闭自己
                 finish();
+                makeMainTaskFront();
             }
         });
     }

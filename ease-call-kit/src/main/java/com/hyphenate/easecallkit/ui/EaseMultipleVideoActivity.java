@@ -3,7 +3,6 @@ package com.hyphenate.easecallkit.ui;
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_TIMER_CALL_TIME;
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_TIMER_TIMEOUT;
-
 import static io.agora.rtc2.Constants.CHANNEL_PROFILE_LIVE_BROADCASTING;
 import static io.agora.rtc2.Constants.CLIENT_ROLE_BROADCASTER;
 import static io.agora.rtc2.Constants.REMOTE_AUDIO_REASON_REMOTE_MUTED;
@@ -82,7 +81,6 @@ import com.hyphenate.easecallkit.utils.EaseCallState;
 import com.hyphenate.easecallkit.utils.EaseMsgUtils;
 import com.hyphenate.util.EMLog;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -1505,8 +1503,9 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 //重置状态
                 EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDLE);
                 EaseCallKit.getInstance().setCallID(null);
-
+                //关闭自己
                 finish();
+                makeMainTaskFront();
             }
         });
     }
