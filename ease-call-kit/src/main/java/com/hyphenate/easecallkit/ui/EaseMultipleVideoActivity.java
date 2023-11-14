@@ -3,7 +3,6 @@ package com.hyphenate.easecallkit.ui;
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_INVITE_EXT;
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_TIMER_CALL_TIME;
 import static com.hyphenate.easecallkit.utils.EaseMsgUtils.CALL_TIMER_TIMEOUT;
-
 import static io.agora.rtc2.Constants.CHANNEL_PROFILE_LIVE_BROADCASTING;
 import static io.agora.rtc2.Constants.CLIENT_ROLE_BROADCASTER;
 import static io.agora.rtc2.Constants.REMOTE_AUDIO_REASON_REMOTE_MUTED;
@@ -82,7 +81,6 @@ import com.hyphenate.easecallkit.utils.EaseCallState;
 import com.hyphenate.easecallkit.utils.EaseMsgUtils;
 import com.hyphenate.util.EMLog;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -365,48 +363,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                     if (isFinishing()) {
                         return;
                     }
-                    if (mUidsList.containsKey(uid)) {
-                        EaseCallMemberView memberView = mUidsList.get(uid);
-                        if(memberView != null){
-                            memberView.setAudioOff(false);
-                        }
-                        if(userInfoList.containsKey(uid)){
-                            memberView.setUserInfo(userInfoList.get(uid));
-                        }
-                        //删除占位符
-                        EaseCallMemberView placeView = placeholderList.remove(memberView.getUserAccount());
-                        if(placeView != null){
-                            callConferenceViewGroup.removeView(placeView);
-                        }
-                        if(!userAccountList.containsValue(uid)){
-                            if(userInfoList.get(uid) != null && userInfoList.get(uid).userAccount!= null){
-                                userAccountList.put(userInfoList.get(uid).userAccount,uid);
-                            }
-                        }
-                    }else {
-                        final EaseCallMemberView memberView = new EaseCallMemberView(getApplicationContext());
-                        if(userInfoList.containsKey(uid)){
-                            memberView.setUserInfo(userInfoList.get(uid));
-                        }
-
-                        //删除占位符
-                        EaseCallMemberView placeView = placeholderList.remove(memberView.getUserAccount());
-                        if(placeView != null){
-                            callConferenceViewGroup.removeView(placeView);
-                        }
-
-                        memberView.setAudioOff(false);
-                        callConferenceViewGroup.addView(memberView);
-                        mUidsList.put(uid, memberView);
-
-                        //获取有关头像 昵称信息
-                        EaseUserAccount account = uIdMap.get(uid);
-                        if(account != null){
-                            setUserJoinChannelInfo(account.getUserName(),uid);
-                        }else{
-                            setUserJoinChannelInfo(null,uid);
-                        }
-                    }
+                    processOnFirstRemoteAudioFrame(uid, elapsed,false);
                 }
             });
         }
@@ -454,6 +411,22 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
         }
 
         @Override
+        public void onUserMuteAudio(int uid, boolean muted) {
+            super.onUserMuteAudio(uid, muted);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    //增加远端View
+                    EMLog.d(TAG, "onUserMuteAudio" +(uid & 0xFFFFFFFFL) + " ,muted="  + muted);
+                    if (isFinishing()) {
+                        return;
+                    }
+                    processOnFirstRemoteAudioFrame(uid, 0,muted);
+                }
+            });
+        }
+
+        @Override
         public void onAudioVolumeIndication(IRtcEngineEventHandler.AudioVolumeInfo[] speakers, int totalVolume){
             runOnUiThread(new Runnable() {
                 @Override
@@ -488,6 +461,52 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             });
         }
     };
+
+    private void processOnFirstRemoteAudioFrame(int uid, int elapsed, boolean isMute) {
+        if (mUidsList.containsKey(uid)) {
+            EaseCallMemberView memberView = mUidsList.get(uid);
+            if(memberView != null){
+                memberView.setAudioOff(isMute);
+            }
+            if(userInfoList.containsKey(uid)){
+                memberView.setUserInfo(userInfoList.get(uid));
+            }
+            //删除占位符
+            EaseCallMemberView placeView = placeholderList.remove(memberView.getUserAccount());
+            if(placeView != null){
+                callConferenceViewGroup.removeView(placeView);
+            }
+            if(!userAccountList.containsValue(uid)){
+                if(userInfoList.get(uid) != null && userInfoList.get(uid).userAccount!= null){
+                    userAccountList.put(userInfoList.get(uid).userAccount,uid);
+                }
+            }
+        }else {
+            final EaseCallMemberView memberView = new EaseCallMemberView(getApplicationContext());
+            if(userInfoList.containsKey(uid)){
+                memberView.setUserInfo(userInfoList.get(uid));
+            }
+
+            //删除占位符
+            EaseCallMemberView placeView = placeholderList.remove(memberView.getUserAccount());
+            if(placeView != null){
+                callConferenceViewGroup.removeView(placeView);
+            }
+
+            memberView.setAudioOff(isMute);
+            callConferenceViewGroup.addView(memberView);
+            mUidsList.put(uid, memberView);
+
+            //获取有关头像 昵称信息
+            EaseUserAccount account = uIdMap.get(uid);
+            if(account != null){
+                setUserJoinChannelInfo(account.getUserName(),uid);
+            }else{
+                setUserJoinChannelInfo(null,uid);
+            }
+        }
+    }
+
     private Observer<BaseEvent> observer;
 
     @Override
@@ -1505,8 +1524,9 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 //重置状态
                 EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDLE);
                 EaseCallKit.getInstance().setCallID(null);
-
+                //关闭自己
                 finish();
+                makeMainTaskFront();
             }
         });
     }
