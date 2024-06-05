@@ -13,8 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
-
-.idea/runConfigurations.xml
 local.properties.bak
-.idea/jarRepositories.xml
+.idea
 
