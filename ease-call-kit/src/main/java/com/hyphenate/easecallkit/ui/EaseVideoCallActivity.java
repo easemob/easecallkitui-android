@@ -202,7 +202,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             super.onError(err);
             EMLog.d(TAG,"IRtcEngineEventHandler onError:" + err);
             if(listener != null){
-                listener.onCallError(EaseCallKit.EaseCallError.RTC_ERROR,err,"rtc error");
+                listener.onCallError(EaseCallKit.EaseCallError.RTC_ERROR,err,"rtc error", null);
             }
             inCommingCallHandler.stopTime();
         }
@@ -735,7 +735,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 AnswerEvent event = new AnswerEvent();
                 event.result = EaseMsgUtils.CALL_ANSWER_REFUSE;
                 event.callId = EaseCallKit.getInstance().getCallID();
-                event.callerDevId = EaseCallKit.getInstance().getClallee_devId();
+                event.callerDevId = EaseCallKit.getInstance().getCallee_devId();
                 event.calleeDevId = EaseCallKit.deviceId;
                 sendCmdMsg(event,username);
             }
@@ -747,7 +747,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 AnswerEvent event = new AnswerEvent();
                 event.result = EaseMsgUtils.CALL_ANSWER_ACCEPT;
                 event.callId = EaseCallKit.getInstance().getCallID();
-                event.callerDevId = EaseCallKit.getInstance().getClallee_devId();
+                event.callerDevId = EaseCallKit.getInstance().getCallee_devId();
                 event.calleeDevId = EaseCallKit.deviceId;
                 if (TextUtils.isEmpty(username)){
                     username = EaseCallKit.getInstance().getFromUserId();
@@ -848,7 +848,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                 AnswerEvent event = new AnswerEvent();
                 event.result = EaseMsgUtils.CALL_ANSWER_ACCEPT;
                 event.callId = EaseCallKit.getInstance().getCallID();
-                event.callerDevId = EaseCallKit.getInstance().getClallee_devId();
+                event.callerDevId = EaseCallKit.getInstance().getCallee_devId();
                 event.calleeDevId = EaseCallKit.deviceId;
                 event.transVoice = true;
                 sendCmdMsg(event,username);
@@ -1239,7 +1239,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             public void onError(int code, String error) {
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
                 if(listener != null){
-                    listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
+                    listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error, null);
                     listener.onInViteCallMessageSent();
                 }
             }
@@ -1315,7 +1315,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             public void onError(int code, String error) {
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
                 if(listener != null){
-                    listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
+                    listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error, null);
                 }
                 if(event.callAction == EaseCallAction.CALL_CANCEL){
                     //退出频道
