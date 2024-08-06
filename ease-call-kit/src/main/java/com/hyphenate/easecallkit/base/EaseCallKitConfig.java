@@ -7,10 +7,6 @@ import java.util.Set;
 
 
 /**
- * author lijian
- * email: Allenlee@easemob.com
- * date: 01/28/2021
- *
  * 有关callkit 用户配置选项
  * defaultHeadImage  用户默认头像(为本地文件绝对路径 或者url)
  * userInfoMap      有关用户信息(key为环信Id , value为EaseCallUserInfo);

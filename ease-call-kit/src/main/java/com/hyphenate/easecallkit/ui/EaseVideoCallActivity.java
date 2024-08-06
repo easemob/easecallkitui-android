@@ -632,6 +632,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             //因为有小程序 设置为直播模式 角色设置为主播
             mRtcEngine.setChannelProfile(CHANNEL_PROFILE_LIVE_BROADCASTING);
             mRtcEngine.setClientRole(CLIENT_ROLE_BROADCASTER);
+            if(listener!=null) {
+                listener.onRtcEngineCreated(mRtcEngine);
+            }
         } catch (Exception e) {
             EMLog.e(TAG, Log.getStackTraceString(e));
             throw new RuntimeException("NEED TO check rtc sdk init fatal error\n" + Log.getStackTraceString(e));
