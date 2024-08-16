@@ -74,12 +74,14 @@ public interface EaseCallKitListener{
      * RTC引擎创建后的回调,用户可以在这里添加上自己的一些配置，例如私有化部署
      * 私有化部署示例：
      * ```kotlin
-     *  override fun onRtcEngineCreated(engine: RtcEngine) {
+     *  override fun onRtcEngineCreated(engine: RtcEngine?) {
      *        var configuration=LocalAccessPointConfiguration().apply {
+     *         //设置你的私有化地址
      *        ipList = arrayListOf<String>().apply { add("111.111.111.111" )}
-     *        verifyDomainName = "ap.111.baidu.local"
+     *        verifyDomainName = "ap.955011.agora.local"
+     *        mode = LOCAL_RPOXY_LOCAL_ONLY
      *      }
-     *    engine.setLocalAccessPoint(configuration)
+     *    engine?.setLocalAccessPoint(configuration)
      * }
      * ```
      * @param engine RTC引擎
