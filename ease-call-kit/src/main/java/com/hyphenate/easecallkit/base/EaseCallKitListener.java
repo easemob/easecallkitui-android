@@ -2,14 +2,14 @@ package com.hyphenate.easecallkit.base;
 
 import android.content.Context;
 
-import org.json.JSONObject;
-
 import com.hyphenate.easecallkit.EaseCallKit;
 
+import org.json.JSONObject;
+
+import io.agora.rtc2.RtcEngine;
+
 /**
- * author lijian
- * email: Allenlee@easemob.com
- * date: 01/14/2021
+ * 通话事件监听
  */
 public interface EaseCallKitListener{
     /**
@@ -69,4 +69,22 @@ public interface EaseCallKitListener{
      *远端用户加入频道回调
      */
     void onRemoteUserJoinChannel(String channelName, String userName, int uid, EaseGetUserAccountCallback callback);
+
+    /**
+     * RTC引擎创建后的回调,用户可以在这里添加上自己的一些配置，例如私有化部署
+     * 私有化部署示例：
+     * ```kotlin
+     *  override fun onRtcEngineCreated(engine: RtcEngine?) {
+     *        var configuration=LocalAccessPointConfiguration().apply {
+     *         //设置你的私有化地址
+     *        ipList = arrayListOf<String>().apply { add("111.111.111.111" )}
+     *        verifyDomainName = "ap.955011.agora.local"
+     *        mode = LOCAL_RPOXY_LOCAL_ONLY
+     *      }
+     *    engine?.setLocalAccessPoint(configuration)
+     * }
+     * ```
+     * @param engine RTC引擎
+     */
+    default void onRtcEngineCreated(RtcEngine engine){}
 }
