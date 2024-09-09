@@ -595,7 +595,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
     }
 
     private void initParams(Bundle bundle){
-        if(bundle != null) {
+        if(!isFloatWindowShowing() && bundle != null) {
             isInComingCall = bundle.getBoolean("isComingCall", false);
             username = bundle.getString("username");
             channelName = bundle.getString("channelName");
