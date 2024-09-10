@@ -151,7 +151,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
     //判断是发起者还是被邀请
     protected boolean isInComingCall;
-    // Judge whether is ongoing call
+    // 是否正在通话中
     protected boolean isOngoingCall;
     protected String username;
     protected String channelName;
@@ -379,6 +379,8 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
         if(uId != 0) {
             isOngoingCall = true;
         }
+        EMLog.e(TAG,"uId="+uId);
+        EMLog.e(TAG,"isOngoingCall="+isOngoingCall);
         if( !isFloatWindowShowing() && bundle != null) {
             isInComingCall = bundle.getBoolean("isComingCall", false);
             username = bundle.getString("username");
