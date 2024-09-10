@@ -78,7 +78,7 @@ public class EaseCallKit {
     private String channelName;
     private String fromUserId; //被叫获取主叫的
     public static String deviceId = "android_";
-    public  String clallee_devId;
+    public  String callee_devId;
     private String callID = null;
     private JSONObject inviteExt = null;
     private EaseCallInfo callInfo = new EaseCallInfo();
@@ -215,9 +215,10 @@ public class EaseCallKit {
      * @param type 通话类型(只能为SINGLE_VOICE_CALL或SINGLE_VIDEO_CALL类型）
      * @param user 被叫用户ID(也就是环信ID)
      * @param ext  扩展字段(用户扩展字段)
+     * @param resultId 自定义标识，用来区分呼叫失败的callback是由哪个方法引起的
      */
-    public void startSingleCall(final EaseCallType type, final String user,final  Map<String, Object> ext){
-        startSingleCall(type, user, ext, defaultVideoCallCls);
+    public void startSingleCall(final EaseCallType type, final String user,final  Map<String, Object> ext, String resultId){
+        startSingleCall(type, user, ext, defaultVideoCallCls, resultId);
     }
 
     /**
@@ -227,23 +228,24 @@ public class EaseCallKit {
      * @param user 被叫用户ID(也就是环信ID)
      * @param ext  扩展字段(用户扩展字段)
      * @param cls  继承自{@link EaseVideoCallActivity}的activity
+     * @param resultId 自定义标识，用来区分呼叫失败的callback是由哪个方法引起的
      */
-    public void startSingleCall(final EaseCallType type, final String user,final  Map<String, Object> ext, Class<? extends EaseVideoCallActivity> cls){
+    public void startSingleCall(final EaseCallType type, final String user,final  Map<String, Object> ext, Class<? extends EaseVideoCallActivity> cls, String resultId){
         if(callState != EaseCallState.CALL_IDLE){
             if(callListener != null){
-                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy");
+                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy", resultId);
             }
             return;
         }
         if(type == EaseCallType.CONFERENCE_CALL){
             if(callListener != null){
-                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_TYPE_ERROR.code,"call type is error");
+                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_TYPE_ERROR.code,"call type is error",resultId);
             }
             return;
         }
         if(user != null && user.length() == 0){
             if(callListener != null){
-                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_PARAM_ERROR.code,"user is null");
+                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_PARAM_ERROR.code,"user is null",resultId);
             }
             return;
         }
@@ -274,8 +276,8 @@ public class EaseCallKit {
      * @param users 用户ID列表(环信ID列表)
      * @param ext  扩展字段(用户扩展字段)
      */
-    public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext){
-        startInviteMultipleCall(users, ext, defaultMultiVideoCls);
+    public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext, String resultId){
+        startInviteMultipleCall(users, ext, defaultMultiVideoCls, resultId);
     }
 
     /**
@@ -285,10 +287,10 @@ public class EaseCallKit {
      * @param ext  扩展字段(用户扩展字段)
      * @param cls   继承自{@link EaseMultipleVideoActivity}的activity
      */
-    public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext, Class<? extends EaseMultipleVideoActivity> cls){
+    public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext, Class<? extends EaseMultipleVideoActivity> cls, String resultId){
         if(callState != EaseCallState.CALL_IDLE && callType != EaseCallType.CONFERENCE_CALL){
             if(callListener != null){
-                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy");
+                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy", resultId);
             }
             return;
         }
@@ -300,7 +302,7 @@ public class EaseCallKit {
                 appContext.startActivity(intent);
             }else{
                 if(callListener != null){
-                    callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_PARAM_ERROR.code,"users is null");
+                    callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_PARAM_ERROR.code,"users is null", resultId);
                 }
             }
         }else{
@@ -345,8 +347,8 @@ public class EaseCallKit {
     }
 
     /**
-     * If you call {@link #startSingleCall(EaseCallType, String, Map)}, {@link #startSingleCall(EaseCallType, String, Map, Class)}
-     * or {@link #startInviteMultipleCall(String[], Map)}, you should call the method of {@link #releaseCall()} when the {@link #curCallCls} is finishing.
+     * If you call {@link #startSingleCall(EaseCallType, String, Map, String)}, {@link #startSingleCall(EaseCallType, String, Map, Class, String)}
+     * or {@link #startInviteMultipleCall(String[], Map, String)}, you should call the method of {@link #releaseCall()} when the {@link #curCallCls} is finishing.
      */
     public void releaseCall() {
         if(curCallCls != null) {
@@ -382,7 +384,7 @@ public class EaseCallKit {
 
                         if(action == null || callerDevId == null || fromCallId == null || fromUser ==null || channel == null){
                             if(callListener != null){
-                                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_RECEIVE_ERROR.code,"receive message error");
+                                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_RECEIVE_ERROR.code,"receive message error", null);
                             }
                             continue;
                         }
@@ -496,7 +498,7 @@ public class EaseCallKit {
                                         if(callState == EaseCallState.CALL_IDLE){
                                             callState = EaseCallState.CALL_ALERTING;
                                             //对方主叫的设备信息
-                                            clallee_devId = callerDevId;
+                                            callee_devId = callerDevId;
                                             callID = fromCallId;
                                             EaseCallInfo info = callInfoMap.get(fromCallId);
                                             if(info != null){
@@ -658,8 +660,8 @@ public class EaseCallKit {
 
     public void setCallID(String callID) { this.callID = callID; }
 
-    public String  getClallee_devId() {
-        return clallee_devId;
+    public String getCallee_devId() {
+        return callee_devId;
     }
 
     public EaseCallKitListener getCallListener() {
@@ -748,7 +750,7 @@ public class EaseCallKit {
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
                 conversation.removeMessage(message.getMsgId());
                 if(callListener != null){
-                    callListener.onCallError(EaseCallError.IM_ERROR,code,error);
+                    callListener.onCallError(EaseCallError.IM_ERROR,code,error, null);
                 }
             }
 

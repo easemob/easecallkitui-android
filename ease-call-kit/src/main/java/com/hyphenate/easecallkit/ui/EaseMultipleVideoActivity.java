@@ -111,7 +111,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
     private static final String TAG = EaseMultipleVideoActivity.class.getSimpleName();
 
     private TimeHandler timehandler;
-    private TimeHandler timeUpdataTimer;
+    private TimeHandler timeUpdateTimer;
     private RtcEngine mRtcEngine;
 
     private EaseCommingCallView incomingCallView;
@@ -121,7 +121,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
     private ImageButton cameraSwitch;
     private ImageButton speakerSwitch;
     private ImageButton changeCameraSwitch;
-    private ImageButton hangupBtn;;
+    private ImageButton hangupBtn;
     private ImageView inviteBtn;
     private ImageView floatBtn;
 
@@ -172,7 +172,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             super.onError(err);
             EMLog.d(TAG,"IRtcEngineEventHandler onError:" + err);
             if(listener != null){
-                listener.onCallError(EaseCallKit.EaseCallError.RTC_ERROR,err,"rtc error");
+                listener.onCallError(EaseCallKit.EaseCallError.RTC_ERROR,err,"rtc error",null);
             }
         }
 
@@ -180,7 +180,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
         public void onJoinChannelSuccess(String channel, int uid, int elapsed) {
             EMLog.d(TAG,"onJoinChannelSuccess channel:"+ channel + " uid" +uid);
             //加入频道开始计时
-            timeUpdataTimer.startTime(CALL_TIMER_CALL_TIME);
+            timeUpdateTimer.startTime(CALL_TIMER_CALL_TIME);
             if(!isInComingCall){
                 ArrayList<String> userList = EaseCallKit.getInstance().getInviteeUsers();
                 if(userList != null && userList.size() > 0){
@@ -531,7 +531,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 checkSelfPermission(REQUESTED_PERMISSIONS[2], PERMISSION_REQ_ID)) {
         }
         timehandler = new TimeHandler();
-        timeUpdataTimer = new TimeHandler();
+        timeUpdateTimer = new TimeHandler();
         checkConference(true);
         EaseCallKit.getInstance().getNotifier().reset();
     }
@@ -759,7 +759,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             changeCameraDirect(!isCameraFront);
         }else if(view.getId() == R.id.btn_hangup){
             if(listener != null){
-                listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonHangup,timeUpdataTimer.timePassed*1000);
+                listener.onEndCallWithReason(callType,channelName, EaseCallEndReason.EaseCallEndReasonHangup,timeUpdateTimer.timePassed*1000);
             }
             exitChannel();
         }else if(view.getId() == R.id.btn_float){
@@ -961,7 +961,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 AnswerEvent event = new AnswerEvent();
                 event.result = EaseMsgUtils.CALL_ANSWER_ACCEPT;
                 event.callId = EaseCallKit.getInstance().getCallID();
-                event.callerDevId = EaseCallKit.getInstance().getClallee_devId();
+                event.callerDevId = EaseCallKit.getInstance().getCallee_devId();
                 event.calleeDevId = EaseCallKit.deviceId;
                 sendCmdMsg(event,username);
             }
@@ -976,7 +976,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 AnswerEvent event = new AnswerEvent();
                 event.result = EaseMsgUtils.CALL_ANSWER_REFUSE;
                 event.callId = EaseCallKit.getInstance().getCallID();
-                event.callerDevId = EaseCallKit.getInstance().getClallee_devId();
+                event.callerDevId = EaseCallKit.getInstance().getCallee_devId();
                 event.calleeDevId = EaseCallKit.deviceId;
                 sendCmdMsg(event,username);
             }
@@ -1259,7 +1259,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                         EMLog.e(TAG, "Invite call error " + code + ", " + error + " username:" + username);
 
                         if (listener != null) {
-                            listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR, code, error);
+                            listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR, code, error, null);
                             listener.onInViteCallMessageSent();
                         }
                     }
@@ -1330,7 +1330,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
                 conversation.removeMessage(message.getMsgId());
                 if(listener != null){
-                    listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
+                    listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error, null);
                 }
                 if(event.callAction == EaseCallAction.CALL_CANCEL){
                     //退出频道
@@ -1537,9 +1537,9 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
     @Override
     public void doShowFloatWindow() {
         super.doShowFloatWindow();
-        if(timeUpdataTimer != null) {
-            Log.e(TAG, "timeUpdataTimer cost seconds: "+timeUpdataTimer.timePassed);
-            EaseCallFloatWindow.getInstance().setCostSeconds(timeUpdataTimer.timePassed);
+        if(timeUpdateTimer != null) {
+            Log.e(TAG, "timeUpdataTimer cost seconds: "+timeUpdateTimer.timePassed);
+            EaseCallFloatWindow.getInstance().setCostSeconds(timeUpdateTimer.timePassed);
         }
         EaseCallFloatWindow.getInstance().setRtcEngine(getApplicationContext(), mRtcEngine);
         EaseCallFloatWindow.getInstance().show();
@@ -1633,9 +1633,9 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             // 防止activity在后台被start至前台导致window还存在
             long costSeconds = EaseCallFloatWindow.getInstance().getTotalCostSeconds();
             Log.e(TAG, "costSeconds: "+costSeconds);
-            if(timeUpdataTimer != null) {
-                timeUpdataTimer.timePassed = (int) costSeconds;
-                updateTime(timeUpdataTimer);
+            if(timeUpdateTimer != null) {
+                timeUpdateTimer.timePassed = (int) costSeconds;
+                updateTime(timeUpdateTimer);
             }
             EaseCallFloatWindow.getInstance().dismiss();
         }
@@ -1710,8 +1710,8 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
         if(timehandler != null){
             timehandler.stopTime();
         }
-        if(timeUpdataTimer != null){
-            timeUpdataTimer.stopTime();
+        if(timeUpdateTimer != null){
+            timeUpdateTimer.stopTime();
         }
         if(mUidsList != null){
             mUidsList.clear();

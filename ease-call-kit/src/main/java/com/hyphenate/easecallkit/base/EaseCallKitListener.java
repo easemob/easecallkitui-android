@@ -54,8 +54,9 @@ public interface EaseCallKitListener{
      * @param type            错误类型
      * @param errorCode      错误码
      * @param description   错误描述
+     * @param resultId      自定义id，呼叫时传入，用来标识本次callback是由哪次呼叫触发
      */
-    void onCallError(EaseCallKit.EaseCallError type, int errorCode, String description);
+    void onCallError(EaseCallKit.EaseCallError type, int errorCode, String description, String resultId);
 
 
     /**
