@@ -1537,8 +1537,11 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
     @Override
     public void doShowFloatWindow() {
         super.doShowFloatWindow();
+        if(isFloatWindowShowing()) {
+            return;
+        }
         if(timeUpdataTimer != null) {
-            Log.e(TAG, "timeUpdataTimer cost seconds: "+timeUpdataTimer.timePassed);
+            EMLog.e(TAG, "timeUpdataTimer cost seconds: "+timeUpdataTimer.timePassed);
             EaseCallFloatWindow.getInstance().setCostSeconds(timeUpdataTimer.timePassed);
         }
         EaseCallFloatWindow.getInstance().setRtcEngine(getApplicationContext(), mRtcEngine);

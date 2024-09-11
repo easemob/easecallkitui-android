@@ -1590,6 +1590,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
     @Override
     public void doShowFloatWindow() {
         super.doShowFloatWindow();
+        if(isFloatWindowShowing()) {
+            return;
+        }
         if(chronometer != null) {
             EaseCallFloatWindow.getInstance().setCostSeconds(chronometer.getCostSeconds());
         }
