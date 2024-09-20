@@ -151,7 +151,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
 
     //判断是发起者还是被邀请
     protected boolean isInComingCall;
-    // Judge whether is ongoing call
+    // 是否正在通话中
     protected boolean isOngoingCall;
     protected String username;
     protected String channelName;
@@ -373,22 +373,22 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
     }
 
     private void initParams(Bundle bundle){
-        if(bundle != null) {
+        callType = EaseCallKit.getInstance().getCallType();
+        EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
+        int uId = bundle.getInt("uId",0);
+        if(uId != 0) {
+            isOngoingCall = true;
+        }
+        EMLog.e(TAG,"uId="+uId);
+        EMLog.e(TAG,"isOngoingCall="+isOngoingCall);
+        if( !isFloatWindowShowing() && bundle != null) {
             isInComingCall = bundle.getBoolean("isComingCall", false);
             username = bundle.getString("username");
             channelName = bundle.getString("channelName");
-            int uId = bundle.getInt("uId",-1);
-            callType = EaseCallKit.getInstance().getCallType();
-            if(uId == -1) {
-                EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
-            }else {
-                isOngoingCall = true;
-            }
         }else{
             isInComingCall = EaseCallKit.getInstance().getIsComingCall();
             username = EaseCallKit.getInstance().getFromUserId();
             channelName = EaseCallKit.getInstance().getChannelName();
-            EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
         }
     }
 
@@ -1101,7 +1101,7 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
                                    @Override
                                    public void run() {
                                        //提示已在其他设备处理
-                                       String info = null;
+                                       String info = "";
                                        if(TextUtils.equals(result, EaseMsgUtils.CALL_ANSWER_ACCEPT)) {
                                            //已经在其他设备接听
                                            info = getString(R.string.The_other_is_recived);
@@ -1590,6 +1590,9 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
     @Override
     public void doShowFloatWindow() {
         super.doShowFloatWindow();
+        if(isFloatWindowShowing()) {
+            return;
+        }
         if(chronometer != null) {
             EaseCallFloatWindow.getInstance().setCostSeconds(chronometer.getCostSeconds());
         }
