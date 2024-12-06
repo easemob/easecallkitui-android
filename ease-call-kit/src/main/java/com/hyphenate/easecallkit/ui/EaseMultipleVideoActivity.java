@@ -45,6 +45,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -192,6 +193,14 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             }
         }
 
+        @Override
+        public void onRejoinChannelSuccess(String channel, int uid, int elapsed) {
+            super.onRejoinChannelSuccess(channel, uid, elapsed);
+            EMLog.d(TAG,"onRejoinChannelSuccess uid:" + uid+ " channel:" + channel);
+            //获取有关信息
+            setUserJoinChannelInfo(null,uid);
+        }
+
         /**
          * 此回调在调用{@link RtcEngine#joinChannelWithUserAccount(String, String, String)}时回调，
          * 3.8.1版本中修改为uid，即调用{@link RtcEngine#joinChannel(String, String, String, int)},
@@ -240,7 +249,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
         @Override
         public void onUserJoined(int uid, int elapsed) {
             super.onUserJoined(uid, elapsed);
-
+            EMLog.d(TAG,"onUserJoined uid:" + uid);
             //获取有关信息
             setUserJoinChannelInfo(null,uid);
         }
@@ -438,8 +447,8 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                         for (AudioVolumeInfo info : speakers) {
                             Integer uId = info.uid;
                             int volume = info.volume;
-                            EMLog.d(TAG, "onAudioVolumeIndication" +
-                                    (uId & 0xFFFFFFFFL) + "  volume: " + volume);
+//                            EMLog.d(TAG, "onAudioVolumeIndication" +
+//                                    (uId & 0xFFFFFFFFL) + "  volume: " + volume);
                             if (uidList.contains(uId)) {
                                 EaseCallMemberView memberView = mUidsList.get(uId);
                                 if (memberView != null && !memberView.getAudioOff()) {
@@ -601,12 +610,27 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             channelName = bundle.getString("channelName");
             callType = EaseCallKit.getInstance().getCallType();
            // invite_ext = bundle.getString(CALL_INVITE_EXT);
+            isMuteState=bundle.getBoolean("isMuteState",false);
+            isVideoMute = bundle.getBoolean("isVideoMute",true);
+            isCameraFront = bundle.getBoolean("isCameraFront",true);
         }else{
             isInComingCall = EaseCallKit.getInstance().getIsComingCall();
             username = EaseCallKit.getInstance().getFromUserId();
             channelName = EaseCallKit.getInstance().getChannelName();
             callType = EaseCallKit.getInstance().getCallType();
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        outState.putBoolean("isComingCall",isInComingCall);
+        outState.putString("username",username);
+        outState.putString("channelName",channelName);
+        outState.putBoolean("isMuteState",isMuteState);
+        outState.putBoolean("isVideoMute",isVideoMute);
+        outState.putBoolean("isCameraFront",isCameraFront);
+        outState.putIntegerArrayList("uidList", (ArrayList<Integer>) uidList);
+        super.onSaveInstanceState(outState);
     }
 
     private void initEngineAndJoinChannel() {
@@ -627,6 +651,10 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             //因为有小程序 设置为直播模式 角色设置为主播
             mRtcEngine.setChannelProfile(CHANNEL_PROFILE_LIVE_BROADCASTING);
             mRtcEngine.setClientRole(CLIENT_ROLE_BROADCASTER);
+
+            if(listener!=null) {
+                listener.onRtcEngineCreated(mRtcEngine);
+            }
 
             //设置小窗口悬浮类型
             EaseCallFloatWindow.getInstance().setCallType(EaseCallType.CONFERENCE_CALL);
@@ -701,9 +729,14 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 }
             });
         }
-//        else{
-//            mRtcEngine.joinChannelWithUserAccount(null, channelName,  EMClient.getInstance().getCurrentUser());
-//        }
+        else{
+            mRtcEngine.joinChannelWithUserAccount(null, channelName,  EMClient.getInstance().getCurrentUser());
+            if(!TextUtils.isEmpty(channelName)) {
+                EMLog.d(TAG,"joinChannelWithUserAccount  channelName:" + channelName + " userAccount:" + EMClient.getInstance().getCurrentUser());
+            }else{
+                EMLog.e(TAG,"channelName:"+channelName+",stack:"+ Log.getStackTraceString(new Throwable()));//打印堆栈信息
+            }
+        }
     }
 
     /**
@@ -1493,10 +1526,11 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                EMLog.i(TAG, "exit channel channelName: " + channelName);
+                leaveChannel();
+                EMLog.d(TAG, "exit channel channelName: " + channelName);
                 if(isInComingCall){
                     stopPlayRing();
-                    EMLog.i(TAG, "exit channel stopPlayRing " + channelName);
+                    EMLog.d(TAG, "exit channel stopPlayRing " + channelName);
                 }else{
                     if(inViteUserMap.size() > 0){
                         if(timehandler != null){
@@ -1524,6 +1558,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                 //重置状态
                 EaseCallKit.getInstance().setCallState(EaseCallState.CALL_IDLE);
                 EaseCallKit.getInstance().setCallID(null);
+                EaseCallKit.getInstance().setChannelName(null);
                 //关闭自己
                 finish();
                 makeMainTaskFront();

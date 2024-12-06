@@ -375,13 +375,13 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
     private void initParams(Bundle bundle){
         callType = EaseCallKit.getInstance().getCallType();
         EaseCallFloatWindow.getInstance(getApplicationContext()).setCallType(callType);
+        isOngoingCall = bundle.getBoolean("isOngoingCall",false);
         int uId = bundle.getInt("uId",0);
         if(uId != 0) {
             isOngoingCall = true;
         }
-        EMLog.e(TAG,"uId="+uId);
-        EMLog.e(TAG,"isOngoingCall="+isOngoingCall);
-        if( !isFloatWindowShowing() && bundle != null) {
+        EMLog.d(TAG,"uId="+uId+",isOngoingCall="+isOngoingCall);
+        if( !isFloatWindowShowing()) {
             isInComingCall = bundle.getBoolean("isComingCall", false);
             username = bundle.getString("username");
             channelName = bundle.getString("channelName");
@@ -390,6 +390,16 @@ public class EaseVideoCallActivity extends EaseBaseCallActivity implements View.
             username = EaseCallKit.getInstance().getFromUserId();
             channelName = EaseCallKit.getInstance().getChannelName();
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        outState.putBoolean("isComingCall",isInComingCall);
+        outState.putString("username",username);
+        outState.putString("channelName",channelName);
+        outState.putBoolean("isOngoingCall",isOngoingCall);
+        outState.putInt("uId",remoteUId);
+        super.onSaveInstanceState(outState);
     }
 
     public void initView(){

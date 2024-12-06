@@ -323,7 +323,10 @@ public class EaseCallKit {
                     Bundle bundle = new Bundle();
                     isComingCall = false;
                     bundle.putBoolean("isComingCall", false);
-                    channelName = EaseCallKitUtils.getRandomString(10);
+                    if(TextUtils.isEmpty(channelName)) {
+                        channelName = EaseCallKitUtils.getRandomString(10);
+                        EMLog.d(TAG,"EaseCallKitUtils.getRandomString:" + channelName);
+                    }
                     bundle.putString("channelName", channelName);
                     intent.putExtras(bundle);
                     appContext.startActivity(intent);
@@ -668,6 +671,11 @@ public class EaseCallKit {
 
     public String getChannelName(){
         return channelName;
+    }
+
+    public void  setChannelName(String channelName){
+        EMLog.d(TAG,"setChannelName:" + channelName);
+        this.channelName=channelName;
     }
 
     public String getFromUserId(){
