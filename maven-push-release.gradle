@@ -1,10 +1,12 @@
 group = "io.hyphenate"
 archivesBaseName = "ease-call-kit"
 version = project.sdkVersion//发布aar的库版本
-apply plugin: 'maven'
-apply plugin: 'signing'
 
-def repositoryId = project.stagingRepositoryId
+apply {
+    plugin 'maven-publish'
+    plugin 'signing'
+}
+
 
 def localProperties = new Properties()
 localProperties.load(project.rootProject.file('local.properties').newDataInputStream())
@@ -50,13 +52,13 @@ task javadoc(type: Javadoc) {
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    archiveClassifier = 'javadoc'
     from javadoc.destinationDir
 }
 
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
+    archiveClassifier = 'sources'
 }
 
 artifacts {
@@ -64,63 +66,81 @@ artifacts {
 }
 
 signing {
-    sign configurations.archives
+    sign publishing.publications
 }
 
-nexusStaging {
-    packageGroup = "$group" //optional if packageGroup == project.getGroup()
-    stagingProfileId = "$group" //when not defined will be got from server using "packageGroup"
-    username = ossrhUsername
-    password = ossrhPassword
-    stagingRepositoryId = repositoryId
+
+android {
+    publishing {
+        singleVariant('release') {
+        }
+    }
 }
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+afterEvaluate {
 
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: ossrhUsername, password: ossrhPassword)
-            }
+    publishing {
+        publications {
+            release(MavenPublication) {
+                groupId = group
+                artifactId = archivesBaseName
+                version = project.sdkVersion
 
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(userName: ossrhUsername, password: ossrhPassword)
-            }
-
-            pom.project {
-                //version version
-                name archivesBaseName
-                packaging 'aar'
-                // optionally artifactId can be defined here
-                //println "current groupId:$group"
-                //groupId group
-                //artifactId archivesBaseName
-                description 'Easy call UI for Easemob IM SDK'
-                url 'https://github.com/easemob/easecallkitui-android'
-
-                scm {
-                    connection 'scm:git@github.com:easemob/easecallkitui.git'
-                    developerConnection 'scm:git@github.com:easemob/easecallkitui.git'
-                    url 'https://github.com/easemob/easecallkitui-android.git'
+                afterEvaluate {
+                    from components.release
                 }
+                // 设置要发布的文件
+                artifact sourcesJar
+                artifact javadocJar
 
-                licenses {
-                    license {
-                        name 'The Apache License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                signing.sign publishing.publications.release
+
+                pom {
+                    name = "$archivesBaseName"
+
+                    description = 'Easy call UI for Easemob IM SDK'
+                    url = 'https://github.com/easemob/easecallkitui-android'
+
+                    scm {
+                        connection = 'scm:git@github.com:easemob/easecallkitui.git'
+                        developerConnection = 'scm:git@github.com:easemob/easecallkitui.git'
+                        url = 'https://github.com/easemob/easecallkitui-android.git'
                     }
-                }
 
-                developers {
-                    developer {
-                        id 'Easemob'
-                        name 'Easemob'
-                        email 'sdk-tools@easemob.com'
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = 'Easemob'
+                            name = 'Easemob'
+                            email = 'sdk-tools@easemob.com'
+                        }
                     }
                 }
             }
         }
+        repositories {
+            maven {
+                name = "ossrh"
+                url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+                credentials {
+                    username = ossrhUsername
+                    password = ossrhPassword
+                }
+            }
+        }
     }
+
+    getTasksByName("signReleasePublication", false).each { task ->
+        task.mustRunAfter(sourcesJar)
+        task.mustRunAfter(javadocJar)
+    }
+
 }
+
 
