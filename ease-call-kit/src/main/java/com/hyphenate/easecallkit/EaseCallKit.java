@@ -390,9 +390,6 @@ public class EaseCallKit {
                         String callerDevId = message.getStringAttribute(EaseMsgUtils.CALL_DEVICE_ID, "");
                         String fromCallId = message.getStringAttribute(EaseMsgUtils.CLL_ID, "");
                         String fromUser = message.getFrom();
-                        if (message.getChatType() == EMMessage.ChatType.GroupChat) {
-                            fromUser = message.conversationId();
-                        }
                         String channel = message.getStringAttribute(EaseMsgUtils.CALL_CHANNELNAME, "");
                         JSONObject ext = null;
                         try {
@@ -429,6 +426,9 @@ public class EaseCallKit {
                                         callEvent.result = EaseMsgUtils.CALL_ANSWER_BUSY;
                                         callEvent.callerDevId = callerDevId;
                                         callEvent.callId = fromCallId;
+                                        if (message.getChatType() == EMMessage.ChatType.GroupChat) {
+                                            fromUser = message.conversationId();
+                                        }
                                         sendCmdMsg(callEvent, fromUser);
                                     }
                                 } else {
@@ -447,6 +447,9 @@ public class EaseCallKit {
                                     AlertEvent callEvent = new AlertEvent();
                                     callEvent.callerDevId = callerDevId;
                                     callEvent.callId = fromCallId;
+                                    if (message.getChatType() == EMMessage.ChatType.GroupChat) {
+                                        fromUser = message.conversationId();
+                                    }
                                     sendCmdMsg(callEvent, fromUser);
 
                                     //启动定时器
@@ -475,6 +478,10 @@ public class EaseCallKit {
                         String callerDevId = message.getStringAttribute(EaseMsgUtils.CALL_DEVICE_ID, "");
                         String fromCallId = message.getStringAttribute(EaseMsgUtils.CLL_ID, "");
                         String fromUser = message.getFrom();
+                        if (message.getChatType() == EMMessage.ChatType.GroupChat) {
+                            groupId = message.conversationId();
+                            fromUser = message.conversationId();
+                        }
                         String channel = message.getStringAttribute(EaseMsgUtils.CALL_CHANNELNAME, "");
                         EaseCallAction callAction = EaseCallAction.getfrom(action);
                         switch (callAction){
@@ -763,14 +770,12 @@ public class EaseCallKit {
         EMCmdMessageBody cmdBody = new EMCmdMessageBody(action);
         message.addBody(cmdBody);
 
+        message.setTo(username);
         if (groupId != null && !groupId.isEmpty()) {
             message.setChatType(EMMessage.ChatType.GroupChat);
             List<String> directionUsers = new ArrayList<>();
             directionUsers.add(username);
             message.setReceiverList(directionUsers);
-            message.setTo(groupId);
-        } else  {
-            message.setTo(username);
         }
         EMLog.d(TAG, "发送cmd回复信息 " + " from: " + message.getFrom() + " to: " + message.getTo());
         message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
