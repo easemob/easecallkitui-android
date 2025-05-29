@@ -461,8 +461,7 @@ public class EaseCallKit {
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
                     EMLog.d(TAG,"Receive cmdmsg:" + message.getMsgId() + " from:" + message.getFrom()  + "  messageType:"+ messageType);
                     //有关通话控制信令
-                    if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO)
-                            && !TextUtils.equals(message.getFrom(), EMClient.getInstance().getCurrentUser())) {
+                    if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO)) {
                         String action = message.getStringAttribute(EaseMsgUtils.CALL_ACTION, "");
                         String callerDevId = message.getStringAttribute(EaseMsgUtils.CALL_DEVICE_ID, "");
                         String fromCallId = message.getStringAttribute(EaseMsgUtils.CLL_ID, "");

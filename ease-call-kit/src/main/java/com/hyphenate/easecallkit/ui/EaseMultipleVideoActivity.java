@@ -1324,6 +1324,9 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
         }else{
             cmdBody.deliverOnlineOnly(true);
         }
+        List<String> directionUsers = new ArrayList<>();;
+        directionUsers.add(username);new ArrayList<>();
+        message.setReceiverList(directionUsers);
         message.setChatType(EMMessage.ChatType.GroupChat);
         message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
         message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, EaseCallKit.deviceId);
