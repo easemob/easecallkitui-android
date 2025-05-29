@@ -380,6 +380,9 @@ public class EaseCallKit {
                 for(EMMessage message: messages){
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
                     EMLog.d(TAG,"Receive msg:" + message.getMsgId() + " from:" + message.getFrom() + " to:" + message.getTo() + "  messageType:"+ messageType);
+                    if (message.getChatType() == EMMessage.ChatType.GroupChat) {
+                        groupId = message.conversationId();
+                    }
                     //有关通话控制信令
                     if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO)
                             && !TextUtils.equals(message.getFrom(), EMClient.getInstance().getCurrentUser())) {
@@ -387,6 +390,9 @@ public class EaseCallKit {
                         String callerDevId = message.getStringAttribute(EaseMsgUtils.CALL_DEVICE_ID, "");
                         String fromCallId = message.getStringAttribute(EaseMsgUtils.CLL_ID, "");
                         String fromUser = message.getFrom();
+                        if (message.getChatType() == EMMessage.ChatType.GroupChat) {
+                            fromUser = message.conversationId();
+                        }
                         String channel = message.getStringAttribute(EaseMsgUtils.CALL_CHANNELNAME, "");
                         JSONObject ext = null;
                         try {
@@ -460,6 +466,9 @@ public class EaseCallKit {
                 for(EMMessage message: messages){
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
                     EMLog.d(TAG,"Receive cmdmsg:" + message.getMsgId() + " from:"  + message.getFrom() + " to:" + message.getTo() +  "  messageType:"+ messageType);
+                    if (message.getChatType() == EMMessage.ChatType.GroupChat) {
+                        groupId = message.conversationId();
+                    }
                     //有关通话控制信令
                     if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO) && !TextUtils.equals(message.getFrom(), EMClient.getInstance().getCurrentUser())) {
                         String action = message.getStringAttribute(EaseMsgUtils.CALL_ACTION, "");
@@ -763,7 +772,7 @@ public class EaseCallKit {
         } else  {
             message.setTo(username);
         }
-
+        EMLog.d(TAG, "发送cmd回复信息 " + " from: " + message.getFrom() + " to: " + message.getTo());
         message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
         message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, event.callerDevId);
         message.setAttribute(EaseMsgUtils.CLL_ID,event.callId);
