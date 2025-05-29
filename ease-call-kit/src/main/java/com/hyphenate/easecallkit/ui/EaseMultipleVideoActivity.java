@@ -1313,19 +1313,25 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
      * @param username
      */
     private void sendCmdMsg(BaseEvent event, String username){
+        if (listener != null ) {
+            if (EaseCallKit.getInstance().getGroupId() == null || EaseCallKit.getInstance().getGroupId().isEmpty()) {
+                listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR, EaseCallKit.CALL_PROCESS_ERROR.CALL_RECEIVE_ERROR.code, "group id doesn't be empty");
+                return;
+            }
+        }
         final EMMessage message = EMMessage.createSendMessage(EMMessage.Type.CMD);
 
         String action="rtcCall";
         EMCmdMessageBody cmdBody = new EMCmdMessageBody(action);
-        message.setTo(username);
+        message.setTo(EaseCallKit.getInstance().getGroupId());
         message.addBody(cmdBody);
         if(event.callAction.equals(EaseCallAction.CALL_CANCEL)){
             cmdBody.deliverOnlineOnly(false);
         }else{
             cmdBody.deliverOnlineOnly(true);
         }
-        List<String> directionUsers = new ArrayList<>();;
-        directionUsers.add(username);new ArrayList<>();
+        List<String> directionUsers = new ArrayList<>();
+        directionUsers.add(username);
         message.setReceiverList(directionUsers);
         message.setChatType(EMMessage.ChatType.GroupChat);
         message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
@@ -1344,12 +1350,12 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             message.setAttribute(EaseMsgUtils.CALLED_DEVICE_ID, ((AnswerEvent) event).calleeDevId);
             message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, ((AnswerEvent) event).callerDevId);
         }
-        final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
+//        final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
         message.setMessageStatusCallback(new EMCallBack() {
             @Override
             public void onSuccess() {
                 EMLog.d(TAG, "Invite call success");
-                conversation.removeMessage(message.getMsgId());
+//                conversation.removeMessage(message.getMsgId());
                 if(event.callAction == EaseCallAction.CALL_CANCEL){
                     //退出频道
                     //exitChannel();
@@ -1362,7 +1368,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             @Override
             public void onError(int code, String error) {
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
-                conversation.removeMessage(message.getMsgId());
+//                conversation.removeMessage(message.getMsgId());
                 if(listener != null){
                     listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
                 }

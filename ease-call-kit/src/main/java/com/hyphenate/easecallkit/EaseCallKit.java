@@ -379,7 +379,7 @@ public class EaseCallKit {
             public void onMessageReceived(List<EMMessage> messages) {
                 for(EMMessage message: messages){
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
-                    EMLog.d(TAG,"Receive msg:" + message.getMsgId() + " from:" + message.getFrom()+ "  messageType:"+ messageType);
+                    EMLog.d(TAG,"Receive msg:" + message.getMsgId() + " from:" + message.getFrom() + " to:" + message.getTo() + "  messageType:"+ messageType);
                     //有关通话控制信令
                     if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO)
                             && !TextUtils.equals(message.getFrom(), EMClient.getInstance().getCurrentUser())) {
@@ -459,9 +459,9 @@ public class EaseCallKit {
             public void onCmdMessageReceived(List<EMMessage> messages) {
                 for(EMMessage message: messages){
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
-                    EMLog.d(TAG,"Receive cmdmsg:" + message.getMsgId() + " from:" + message.getFrom()  + "  messageType:"+ messageType);
+                    EMLog.d(TAG,"Receive cmdmsg:" + message.getMsgId() + " from:"  + message.getFrom() + " to:" + message.getTo() +  "  messageType:"+ messageType);
                     //有关通话控制信令
-                    if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO)) {
+                    if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO) && !TextUtils.equals(message.getFrom(), EMClient.getInstance().getCurrentUser())) {
                         String action = message.getStringAttribute(EaseMsgUtils.CALL_ACTION, "");
                         String callerDevId = message.getStringAttribute(EaseMsgUtils.CALL_DEVICE_ID, "");
                         String fromCallId = message.getStringAttribute(EaseMsgUtils.CLL_ID, "");
@@ -507,6 +507,8 @@ public class EaseCallKit {
                                     if(!vaild){
                                         //通话无效
                                         callInfoMap.remove(fromCallId);
+                                        //清理群组id缓存
+                                        groupId = null;
                                     }else{
                                         //收到callId 有效
                                         if(callState == EaseCallState.CALL_IDLE){
@@ -528,6 +530,8 @@ public class EaseCallKit {
                                             //通话无效
                                             callInfoMap.remove(fromCallId);
                                             timeHandler.stopTime();
+                                            //清理群组id缓存
+                                            groupId = null;
                                         }
                                     }
                                 }
@@ -746,10 +750,19 @@ public class EaseCallKit {
      */
     private void sendCmdMsg(BaseEvent event,String username){
         final EMMessage message = EMMessage.createSendMessage(EMMessage.Type.CMD);
-        message.setTo(username);
         String action="rtcCall";
         EMCmdMessageBody cmdBody = new EMCmdMessageBody(action);
         message.addBody(cmdBody);
+
+        if (groupId != null && !groupId.isEmpty()) {
+            message.setChatType(EMMessage.ChatType.GroupChat);
+            List<String> directionUsers = new ArrayList<>();
+            directionUsers.add(username);
+            message.setReceiverList(directionUsers);
+            message.setTo(groupId);
+        } else  {
+            message.setTo(username);
+        }
 
         message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
         message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, event.callerDevId);
@@ -762,18 +775,18 @@ public class EaseCallKit {
         }else if(event.callAction == EaseCallAction.CALL_ALERT){
             message.setAttribute(EaseMsgUtils.CALLED_DEVICE_ID, deviceId);
         }
-        final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
+//        final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
         message.setMessageStatusCallback(new EMCallBack() {
             @Override
             public void onSuccess() {
                 EMLog.d(TAG, "Invite call success");
-                conversation.removeMessage(message.getMsgId());
+//                conversation.removeMessage(message.getMsgId());
             }
 
             @Override
             public void onError(int code, String error) {
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
-                conversation.removeMessage(message.getMsgId());
+//                conversation.removeMessage(message.getMsgId());
                 if(callListener != null){
                     callListener.onCallError(EaseCallError.IM_ERROR,code,error);
                 }
@@ -915,11 +928,18 @@ public class EaseCallKit {
         final EMMessage message = EMMessage.createSendMessage(EMMessage.Type.CMD);
         String action="rtcCall";
         EMCmdMessageBody cmdBody = new EMCmdMessageBody(action);
-        message.setTo(username);
         message.addBody(cmdBody);
+
         if (groupId != null && !groupId.isEmpty()) {
+            message.setTo(groupId);
             message.setChatType(EMMessage.ChatType.GroupChat);
+            List<String> directionUsers = new ArrayList<>();
+            directionUsers.add(username);
+            message.setReceiverList(directionUsers);
+        } else {
+            message.setTo(username);
         }
+
         if(event.callAction.equals(EaseCallAction.CALL_VIDEO_TO_VOICE) ||
                 event.callAction.equals(EaseCallAction.CALL_CANCEL)){
             cmdBody.deliverOnlineOnly(false);
@@ -944,12 +964,12 @@ public class EaseCallKit {
             message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, ((AnswerEvent) event).callerDevId);
             message.setAttribute(EaseMsgUtils.CALLED_TRANSE_VOICE, ((AnswerEvent) event).transVoice);
         }
-        final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
+//        final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
         message.setMessageStatusCallback(new EMCallBack() {
             @Override
             public void onSuccess() {
                 EMLog.d(TAG, "Invite call success");
-                conversation.removeMessage(message.getMsgId());
+//                conversation.removeMessage(message.getMsgId());
                 if(event.callAction == EaseCallAction.CALL_CANCEL){
                     exitCall();
                 }else if(event.callAction == EaseCallAction.CALL_CONFIRM_CALLEE){
@@ -964,9 +984,9 @@ public class EaseCallKit {
             @Override
             public void onError(int code, String error) {
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
-                if(conversation != null){
-                    conversation.removeMessage(message.getMsgId());
-                }
+//                if(conversation != null){
+//                    conversation.removeMessage(message.getMsgId());
+//                }
                 if(event.callAction == EaseCallAction.CALL_CANCEL){
                     //退出频道
                     exitCall();
