@@ -62,6 +62,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.Objects;
 
 
 /**
@@ -77,6 +78,7 @@ public class EaseCallKit {
     private EaseCallState callState = EaseCallState.CALL_IDLE;
     private String channelName;
     private String fromUserId; //被叫获取主叫的
+    private  String groupId;
     public static String deviceId = "android_";
     public  String clallee_devId;
     private String callID = null;
@@ -272,26 +274,35 @@ public class EaseCallKit {
      * 邀请加入多人通话
      * 注意：在相关activity结束时需要调用{@link #releaseCall()}，防止出现内存泄漏
      * @param users 用户ID列表(环信ID列表)
+     * @param groupId 群组id
      * @param ext  扩展字段(用户扩展字段)
      */
-    public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext){
-        startInviteMultipleCall(users, ext, defaultMultiVideoCls);
+    public void startInviteMultipleCall(final String[] users,String groupId,final Map<String, Object> ext){
+        startInviteMultipleCall(users, groupId,ext, defaultMultiVideoCls);
     }
 
     /**
      * 邀请加入多人通话
      * 注意：在相关activity结束时需要调用{@link #releaseCall()}，防止出现内存泄漏
      * @param users 用户ID列表(环信ID列表)
+     * @param conversationId 群组id
      * @param ext  扩展字段(用户扩展字段)
      * @param cls   继承自{@link EaseMultipleVideoActivity}的activity
      */
-    public void startInviteMultipleCall(final String[] users,final Map<String, Object> ext, Class<? extends EaseMultipleVideoActivity> cls){
+    public void startInviteMultipleCall(final String[] users, String conversationId,final Map<String, Object> ext, Class<? extends EaseMultipleVideoActivity> cls){
         if(callState != EaseCallState.CALL_IDLE && callType != EaseCallType.CONFERENCE_CALL){
             if(callListener != null){
                 callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"current state is busy");
             }
             return;
         }
+        if (conversationId == null || conversationId.isEmpty()) {
+            if(callListener != null){
+                callListener.onCallError(EaseCallError.PROCESS_ERROR,CALL_PROCESS_ERROR.CALL_STATE_ERROR.code,"conversation id doesn't be empty");
+            }
+            return;
+        }
+        groupId = conversationId;
         if(users == null || users.length  == 0) {
             if(curCallCls != null){
                 inviteeUsers.clear();
@@ -349,9 +360,10 @@ public class EaseCallKit {
 
     /**
      * If you call {@link #startSingleCall(EaseCallType, String, Map)}, {@link #startSingleCall(EaseCallType, String, Map, Class)}
-     * or {@link #startInviteMultipleCall(String[], Map)}, you should call the method of {@link #releaseCall()} when the {@link #curCallCls} is finishing.
+     * or {@link #startInviteMultipleCall(String[], String,Map)}, you should call the method of {@link #releaseCall()} when the {@link #curCallCls} is finishing.
      */
     public void releaseCall() {
+        groupId = null;
         if(curCallCls != null) {
             curCallCls = null;
         }
@@ -475,6 +487,8 @@ public class EaseCallKit {
                                     //发布消息
                                     EaseLiveDataBus.get().with(EaseCallType.SINGLE_VIDEO_CALL.toString()).postValue(event);
                                 }
+                                //清理群组id缓存
+                                groupId = null;
                                 break;
                             case CALL_ALERT:
                                 String calleedDeviceId = message.getStringAttribute(EaseMsgUtils.CALLED_DEVICE_ID, "");
@@ -529,6 +543,8 @@ public class EaseCallKit {
                                 event.callerDevId = callerDevId;
                                 event.callId = fromCallId;
                                 event.userId = fromUser;
+                                //清理群组id缓存
+                                groupId = null;
                                 //发布消息
                                 EaseLiveDataBus.get().with(EaseCallType.SINGLE_VIDEO_CALL.toString()).postValue(event);
                                 break;
@@ -680,6 +696,10 @@ public class EaseCallKit {
 
     public String getFromUserId(){
         return fromUserId;
+    }
+
+    public  String getGroupId() {
+        return  groupId;
     }
 
     public boolean getIsComingCall(){
@@ -898,6 +918,9 @@ public class EaseCallKit {
         EMCmdMessageBody cmdBody = new EMCmdMessageBody(action);
         message.setTo(username);
         message.addBody(cmdBody);
+        if (groupId != null && !groupId.isEmpty()) {
+            message.setChatType(EMMessage.ChatType.GroupChat);
+        }
         if(event.callAction.equals(EaseCallAction.CALL_VIDEO_TO_VOICE) ||
                 event.callAction.equals(EaseCallAction.CALL_CANCEL)){
             cmdBody.deliverOnlineOnly(false);
@@ -975,6 +998,7 @@ public class EaseCallKit {
                 //重置状态
                 setCallState(EaseCallState.CALL_IDLE);
                 setCallID(null);
+                groupId = null;
             }
         });
     }
