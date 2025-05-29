@@ -136,6 +136,8 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
     private String ringFile;
     private MediaPlayer mediaPlayer;
     private RelativeLayout viewGroupLayout;
+    //群组id
+    private String conversationId;
 
 
     volatile private boolean mConfirm_ring = false;
@@ -609,6 +611,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             username = bundle.getString("username");
             channelName = bundle.getString("channelName");
             callType = EaseCallKit.getInstance().getCallType();
+            conversationId = EaseCallKit.getInstance().getGroupId();
            // invite_ext = bundle.getString(CALL_INVITE_EXT);
             isMuteState=bundle.getBoolean("isMuteState",false);
             isVideoMute = bundle.getBoolean("isVideoMute",true);
@@ -618,6 +621,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             username = EaseCallKit.getInstance().getFromUserId();
             channelName = EaseCallKit.getInstance().getChannelName();
             callType = EaseCallKit.getInstance().getCallType();
+            conversationId = EaseCallKit.getInstance().getGroupId();
         }
     }
 
@@ -799,6 +803,10 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             showFloatWindow();
         }else if(view.getId() == R.id.btn_invite){
             if(listener != null){
+                if (conversationId == null && conversationId.isEmpty()) {
+                    listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR, EaseCallKit.CALL_PROCESS_ERROR.CALL_STATE_ERROR.code, "group id doesn't be empty");
+                    return;
+                }
                 Set<Integer> userset = mUidsList.keySet();
                 int size = userset.size();
                 JSONObject object = EaseCallKit.getInstance().getInviteExt();
@@ -810,9 +818,9 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                             users[i++] = mUidsList.get(user).getUserAccount();
                         }
                     }
-                    listener.onInviteUsers(getApplicationContext(),users,object);
+                    listener.onInviteUsers(getApplicationContext(),conversationId,users,object);
                 }else{
-                    listener.onInviteUsers(getApplicationContext(),null,object);
+                    listener.onInviteUsers(getApplicationContext(),conversationId,null,object);
                 }
             }
         }
@@ -1240,72 +1248,62 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
                     }
                 });
 
-                final EMMessage message = EMMessage.createTxtSendMessage(getApplicationContext().getString(R.string.invited_to_make_multi_party_call), username);
-                message.setAttribute(EaseMsgUtils.CALL_ACTION, EaseCallAction.CALL_INVITE.state);
-                message.setAttribute(EaseMsgUtils.CALL_CHANNELNAME, channelName);
-                message.setAttribute(EaseMsgUtils.CALL_TYPE, callType.code);
-                message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, EaseCallKit.deviceId);
-                JSONObject object = EaseCallKit.getInstance().getInviteExt();
-                if (object != null) {
-                    message.setAttribute(CALL_INVITE_EXT, object);
-                } else {
-                    try {
-                        JSONObject obj = new JSONObject();
-                        message.setAttribute(CALL_INVITE_EXT, obj);
-                    } catch (Exception e) {
-                        e.getStackTrace();
-                    }
-                }
-                if (EaseCallKit.getInstance().getCallID() == null) {
-                    EaseCallKit.getInstance().setCallID(EaseCallKitUtils.getRandomString(10));
-                }
-                message.setAttribute(EaseMsgUtils.CLL_ID, EaseCallKit.getInstance().getCallID());
 
-                message.setAttribute(EaseMsgUtils.CLL_TIMESTRAMEP, System.currentTimeMillis());
-                message.setAttribute(EaseMsgUtils.CALL_MSG_TYPE, EaseMsgUtils.CALL_MSG_INFO);
-
-                //增加推送字段
-//                JSONObject extObject = new JSONObject();
-//                try {
-//                    String info = getApplication().getString(R.string.alert_request_multiple_video, EMClient.getInstance().getCurrentUser());
-//                    extObject.putOpt("em_push_title", info);
-//                    extObject.putOpt("em_push_content", info);
-//                    extObject.putOpt("isRtcCall", true);
-//                    extObject.putOpt("callType", EaseCallType.CONFERENCE_CALL.code);
-//                } catch (JSONException e) {
-//                    e.printStackTrace();
-//                }
-//                message.setAttribute("em_apns_ext", extObject);
-
-                final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
-                message.setMessageStatusCallback(new EMCallBack() {
-                    @Override
-                    public void onSuccess() {
-                        EMLog.d(TAG, "Invite call success username:" + username);
-                        if (listener != null) {
-                            listener.onInViteCallMessageSent();
-                        }
-                    }
-
-                    @Override
-                    public void onError(int code, String error) {
-                        EMLog.e(TAG, "Invite call error " + code + ", " + error + " username:" + username);
-
-                        if (listener != null) {
-                            listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR, code, error);
-                            listener.onInViteCallMessageSent();
-                        }
-                    }
-
-                    @Override
-                    public void onProgress(int progress, String status) {
-
-                    }
-                });
-                EMClient.getInstance().chatManager().sendMessage(message);
             }
         }
+        //发送定向消息邀请群成员
+        final EMMessage message = EMMessage.createTextSendMessage(getApplicationContext().getString(R.string.invited_to_make_multi_party_call), conversationId);
+        message.setChatType(EMMessage.ChatType.GroupChat);
+        message.setAttribute(EaseMsgUtils.CALL_ACTION, EaseCallAction.CALL_INVITE.state);
+        message.setAttribute(EaseMsgUtils.CALL_CHANNELNAME, channelName);
+        message.setAttribute(EaseMsgUtils.CALL_TYPE, callType.code);
+        message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, EaseCallKit.deviceId);
+        message.setReceiverList(userArray);
+        JSONObject object = EaseCallKit.getInstance().getInviteExt();
+        if (object != null) {
+            message.setAttribute(CALL_INVITE_EXT, object);
+        } else {
+            try {
+                JSONObject obj = new JSONObject();
+                message.setAttribute(CALL_INVITE_EXT, obj);
+            } catch (Exception e) {
+                e.getStackTrace();
+            }
+        }
+        if (EaseCallKit.getInstance().getCallID() == null) {
+            EaseCallKit.getInstance().setCallID(EaseCallKitUtils.getRandomString(10));
+        }
+        message.setAttribute(EaseMsgUtils.CLL_ID, EaseCallKit.getInstance().getCallID());
 
+        message.setAttribute(EaseMsgUtils.CLL_TIMESTRAMEP, System.currentTimeMillis());
+        message.setAttribute(EaseMsgUtils.CALL_MSG_TYPE, EaseMsgUtils.CALL_MSG_INFO);
+
+        final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
+        message.setMessageStatusCallback(new EMCallBack() {
+            @Override
+            public void onSuccess() {
+                EMLog.d(TAG, "Invite call success username:" + username);
+                if (listener != null) {
+                    listener.onInViteCallMessageSent();
+                }
+            }
+
+            @Override
+            public void onError(int code, String error) {
+                EMLog.e(TAG, "Invite call error " + code + ", " + error + " username:" + username);
+
+                if (listener != null) {
+                    listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR, code, error);
+                    listener.onInViteCallMessageSent();
+                }
+            }
+
+            @Override
+            public void onProgress(int progress, String status) {
+
+            }
+        });
+        EMClient.getInstance().chatManager().sendMessage(message);
         //初始化邀请列表
         EaseCallKit.getInstance().InitInviteeUsers();
     }
@@ -1315,18 +1313,27 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
      * @param username
      */
     private void sendCmdMsg(BaseEvent event, String username){
+        if (listener != null ) {
+            if (EaseCallKit.getInstance().getGroupId() == null || EaseCallKit.getInstance().getGroupId().isEmpty()) {
+                listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR, EaseCallKit.CALL_PROCESS_ERROR.CALL_RECEIVE_ERROR.code, "group id doesn't be empty");
+                return;
+            }
+        }
         final EMMessage message = EMMessage.createSendMessage(EMMessage.Type.CMD);
 
         String action="rtcCall";
         EMCmdMessageBody cmdBody = new EMCmdMessageBody(action);
-        message.setTo(username);
+        message.setTo(EaseCallKit.getInstance().getGroupId());
         message.addBody(cmdBody);
         if(event.callAction.equals(EaseCallAction.CALL_CANCEL)){
             cmdBody.deliverOnlineOnly(false);
         }else{
             cmdBody.deliverOnlineOnly(true);
         }
-
+        List<String> directionUsers = new ArrayList<>();
+        directionUsers.add(username);
+        message.setReceiverList(directionUsers);
+        message.setChatType(EMMessage.ChatType.GroupChat);
         message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
         message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, EaseCallKit.deviceId);
         message.setAttribute(EaseMsgUtils.CLL_ID, EaseCallKit.getInstance().getCallID());
@@ -1343,12 +1350,12 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             message.setAttribute(EaseMsgUtils.CALLED_DEVICE_ID, ((AnswerEvent) event).calleeDevId);
             message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, ((AnswerEvent) event).callerDevId);
         }
-        final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
+//        final EMConversation conversation = EMClient.getInstance().chatManager().getConversation(username, EMConversation.EMConversationType.Chat, true);
         message.setMessageStatusCallback(new EMCallBack() {
             @Override
             public void onSuccess() {
                 EMLog.d(TAG, "Invite call success");
-                conversation.removeMessage(message.getMsgId());
+//                conversation.removeMessage(message.getMsgId());
                 if(event.callAction == EaseCallAction.CALL_CANCEL){
                     //退出频道
                     //exitChannel();
@@ -1361,7 +1368,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             @Override
             public void onError(int code, String error) {
                 EMLog.e(TAG, "Invite call error " + code + ", " + error);
-                conversation.removeMessage(message.getMsgId());
+//                conversation.removeMessage(message.getMsgId());
                 if(listener != null){
                     listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR,code,error);
                 }
