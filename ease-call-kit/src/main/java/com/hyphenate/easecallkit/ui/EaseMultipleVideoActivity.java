@@ -836,6 +836,7 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
             @Override
             public void onChanged(BaseEvent event) {
                 if(event != null&&timehandler!=null) {
+                    EMLog.d(TAG,"Receive call event:" + event.callAction + " from:"  + event.callerDevId + " to:" + event.calleeDevId +  "  userId:"+ event.userId);
                     switch (event.callAction){
                         case CALL_ALERT:
                             AlertEvent alertEvent = (AlertEvent)event;
@@ -1313,27 +1314,17 @@ public class EaseMultipleVideoActivity extends EaseBaseCallActivity implements V
      * @param username
      */
     private void sendCmdMsg(BaseEvent event, String username){
-        if (listener != null ) {
-            if (EaseCallKit.getInstance().getGroupId() == null || EaseCallKit.getInstance().getGroupId().isEmpty()) {
-                listener.onCallError(EaseCallKit.EaseCallError.IM_ERROR, EaseCallKit.CALL_PROCESS_ERROR.CALL_RECEIVE_ERROR.code, "group id doesn't be empty");
-                return;
-            }
-        }
         final EMMessage message = EMMessage.createSendMessage(EMMessage.Type.CMD);
 
         String action="rtcCall";
         EMCmdMessageBody cmdBody = new EMCmdMessageBody(action);
-        message.setTo(EaseCallKit.getInstance().getGroupId());
+        message.setTo(username);
         message.addBody(cmdBody);
         if(event.callAction.equals(EaseCallAction.CALL_CANCEL)){
             cmdBody.deliverOnlineOnly(false);
         }else{
             cmdBody.deliverOnlineOnly(true);
         }
-        List<String> directionUsers = new ArrayList<>();
-        directionUsers.add(username);
-        message.setReceiverList(directionUsers);
-        message.setChatType(EMMessage.ChatType.GroupChat);
         message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
         message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, EaseCallKit.deviceId);
         message.setAttribute(EaseMsgUtils.CLL_ID, EaseCallKit.getInstance().getCallID());

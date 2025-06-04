@@ -380,9 +380,6 @@ public class EaseCallKit {
                 for(EMMessage message: messages){
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
                     EMLog.d(TAG,"Receive msg:" + message.getMsgId() + " from:" + message.getFrom() + " to:" + message.getTo() + "  messageType:"+ messageType);
-                    if (message.getChatType() == EMMessage.ChatType.GroupChat) {
-                        groupId = message.conversationId();
-                    }
                     //有关通话控制信令
                     if(TextUtils.equals(messageType, EaseMsgUtils.CALL_MSG_INFO)
                             && !TextUtils.equals(message.getFrom(), EMClient.getInstance().getCurrentUser())) {
@@ -426,9 +423,6 @@ public class EaseCallKit {
                                         callEvent.result = EaseMsgUtils.CALL_ANSWER_BUSY;
                                         callEvent.callerDevId = callerDevId;
                                         callEvent.callId = fromCallId;
-                                        if (message.getChatType() == EMMessage.ChatType.GroupChat) {
-                                            fromUser = message.conversationId();
-                                        }
                                         sendCmdMsg(callEvent, fromUser);
                                     }
                                 } else {
@@ -447,9 +441,6 @@ public class EaseCallKit {
                                     AlertEvent callEvent = new AlertEvent();
                                     callEvent.callerDevId = callerDevId;
                                     callEvent.callId = fromCallId;
-                                    if (message.getChatType() == EMMessage.ChatType.GroupChat) {
-                                        fromUser = message.conversationId();
-                                    }
                                     sendCmdMsg(callEvent, fromUser);
 
                                     //启动定时器
@@ -468,7 +459,7 @@ public class EaseCallKit {
             public void onCmdMessageReceived(List<EMMessage> messages) {
                 for(EMMessage message: messages){
                     String messageType = message.getStringAttribute(EaseMsgUtils.CALL_MSG_TYPE, "");
-                    EMLog.d(TAG,"Receive cmdmsg:" + message.getMsgId() + " from:"  + message.getFrom() + " to:" + message.getTo() +  "  messageType:"+ messageType);
+                    EMLog.d(TAG,"Receive cmd msg:" + message.getMsgId() + " from:"  + message.getFrom() + " to:" + message.getTo() +  "  messageType:"+ messageType);
                     if (message.getChatType() == EMMessage.ChatType.GroupChat) {
                         groupId = message.conversationId();
                     }
@@ -771,12 +762,6 @@ public class EaseCallKit {
         message.addBody(cmdBody);
 
         message.setTo(username);
-        if (groupId != null && !groupId.isEmpty()) {
-            message.setChatType(EMMessage.ChatType.GroupChat);
-            List<String> directionUsers = new ArrayList<>();
-            directionUsers.add(username);
-            message.setReceiverList(directionUsers);
-        }
         EMLog.d(TAG, "发送cmd回复信息 " + " from: " + message.getFrom() + " to: " + message.getTo());
         message.setAttribute(EaseMsgUtils.CALL_ACTION, event.callAction.state);
         message.setAttribute(EaseMsgUtils.CALL_DEVICE_ID, event.callerDevId);
@@ -944,15 +929,7 @@ public class EaseCallKit {
         EMCmdMessageBody cmdBody = new EMCmdMessageBody(action);
         message.addBody(cmdBody);
 
-        if (groupId != null && !groupId.isEmpty()) {
-            message.setTo(groupId);
-            message.setChatType(EMMessage.ChatType.GroupChat);
-            List<String> directionUsers = new ArrayList<>();
-            directionUsers.add(username);
-            message.setReceiverList(directionUsers);
-        } else {
-            message.setTo(username);
-        }
+        message.setTo(username);
 
         if(event.callAction.equals(EaseCallAction.CALL_VIDEO_TO_VOICE) ||
                 event.callAction.equals(EaseCallAction.CALL_CANCEL)){
