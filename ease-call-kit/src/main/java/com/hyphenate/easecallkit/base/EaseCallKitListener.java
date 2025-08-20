@@ -13,12 +13,13 @@ import io.agora.rtc2.RtcEngine;
  */
 public interface EaseCallKitListener{
     /**
-     * 邀请好友进行多人通话
+     * 邀请群成员进行多人通话
      * @param context
+     * @param groupId 群组id
      * @param users   当前通话中已经存在的成员
      * @param ext     自定义扩展字段
      */
-    void onInviteUsers(Context context,String []users,JSONObject ext);
+    void onInviteUsers(Context context,String groupId,String []users,JSONObject ext);
 
 
     /**
